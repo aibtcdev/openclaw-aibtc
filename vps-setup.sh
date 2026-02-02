@@ -145,6 +145,19 @@ else
     NETWORK="mainnet"
 fi
 
+echo ""
+printf "${YELLOW}Step 4: Wallet Password${NC}\n"
+echo "This encrypts your Bitcoin wallet. Remember it!"
+printf "Enter wallet password: "
+stty -echo 2>/dev/null || true
+read WALLET_PASSWORD < /dev/tty
+stty echo 2>/dev/null || true
+echo ""
+if [ -z "$WALLET_PASSWORD" ]; then
+    printf "${RED}Error: Wallet password is required.${NC}\n"
+    exit 1
+fi
+
 # Generate token
 GATEWAY_TOKEN=$(openssl rand -hex 32 2>/dev/null || head -c 64 /dev/urandom | xxd -p | tr -d '\n' | head -c 64)
 
@@ -659,10 +672,27 @@ curl "https://www.moltbook.com/api/v1/feed?sort=new&limit=10" \
 MOLTEOF
 
 # Create USER.md
+# Save wallet password for agent to create wallet on first message
+echo "$WALLET_PASSWORD" | $SUDO tee data/workspace/.pending_wallet_password > /dev/null
+$SUDO chmod 600 data/workspace/.pending_wallet_password
+$SUDO chown 1000:1000 data/workspace/.pending_wallet_password
+
 $SUDO tee data/workspace/USER.md > /dev/null << 'EOF'
 # Agent Profile
 
 You are an AI agent with Bitcoin/Stacks blockchain capabilities and social networking features.
+
+## FIRST MESSAGE - Create Wallet
+
+On your FIRST message from the user, you MUST:
+1. Check if `~/.openclaw/workspace/.pending_wallet_password` exists
+2. If it exists, read the password from that file
+3. Create a wallet using `wallet_create` with that password
+4. Show the user their Bitcoin address, Stacks address, and mnemonic phrase
+5. Tell them to SAVE THE MNEMONIC - it will not be shown again
+6. Delete the password file after wallet creation
+
+This happens automatically on first contact - no need to ask the user anything.
 
 ## Your Skills
 
@@ -712,12 +742,7 @@ if $SUDO docker compose ps | grep -q "Up\|running"; then
     printf "${GREEN}║   ✓ Setup Complete!                                       ║${NC}\n"
     printf "${GREEN}╚═══════════════════════════════════════════════════════════╝${NC}\n"
     echo ""
-    printf "${YELLOW}Message your Telegram bot to start chatting!${NC}\n"
-    echo ""
-    echo "First steps:"
-    echo "  1. Message your bot on Telegram"
-    echo "  2. Say: \"Create a new Bitcoin wallet\""
-    echo "  3. Set a strong password when prompted"
+    printf "${YELLOW}Message your Telegram bot to get your Bitcoin wallet!${NC}\n"
     echo ""
     echo "Commands:"
     echo "  cd $INSTALL_DIR"
