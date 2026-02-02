@@ -105,6 +105,11 @@ mkdir -p "$INSTALL_DIR/data/workspace/skills/aibtc"
 mkdir -p "$INSTALL_DIR/data/workspace/memory"
 cd "$INSTALL_DIR"
 
+# Clean up if openclaw.json is a directory (Docker creates this if file missing)
+if [ -d "$INSTALL_DIR/data/openclaw.json" ]; then
+    rm -rf "$INSTALL_DIR/data/openclaw.json"
+fi
+
 # Create .env
 cat > .env << EOF
 OPENROUTER_API_KEY=${OPENROUTER_KEY}
@@ -120,7 +125,7 @@ USER root
 RUN npm install -g @aibtc/mcp-server mcporter
 ENV NETWORK=mainnet
 USER node
-CMD ["node", "dist/index.js", "gateway", "--bind", "0.0.0.0", "--port", "18789"]
+CMD ["node", "dist/index.js", "gateway", "--bind", "lan", "--port", "18789"]
 EOF
 
 # Create docker-compose.yml
@@ -136,9 +141,7 @@ services:
       - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN}
       - OPENCLAW_CONFIG_PATH=/home/node/.openclaw/openclaw.json
     volumes:
-      - ./data/openclaw.json:/home/node/.openclaw/openclaw.json:ro
-      - ./data/config:/home/node/.openclaw/config:ro
-      - ./data/workspace:/home/node/.openclaw/workspace
+      - ./data:/home/node/.openclaw
     ports:
       - "18789:18789"
 EOF
@@ -183,7 +186,6 @@ cat > data/openclaw.json << EOF
   "gateway": {
     "port": 18789,
     "mode": "local",
-    "bind": "0.0.0.0",
     "auth": {
       "mode": "token",
       "token": "${GATEWAY_TOKEN}"
@@ -393,7 +395,7 @@ EOF
 
 # Build and start
 printf "${BLUE}Building Docker image (this may take a minute)...${NC}\n"
-docker compose build --quiet
+docker compose build
 
 printf "${BLUE}Starting agent...${NC}\n"
 docker compose up -d
