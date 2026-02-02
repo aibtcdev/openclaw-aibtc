@@ -51,6 +51,7 @@ cd "$SCRIPT_DIR"
 echo -e "${BLUE}Creating data directories...${NC}"
 mkdir -p data/config
 mkdir -p data/workspace/skills/aibtc
+mkdir -p data/workspace/skills/moltbook
 mkdir -p data/workspace/memory
 
 # Check if .env exists
@@ -218,9 +219,12 @@ cat > data/openclaw.json << EOF
 }
 EOF
 
-# Copy aibtc skill
-echo -e "${BLUE}Installing aibtc skill...${NC}"
+# Copy skills
+echo -e "${BLUE}Installing skills...${NC}"
 cp -r skills/aibtc data/workspace/skills/
+cp -r skills/moltbook data/workspace/skills/
+echo -e "${GREEN}✓ Installed aibtc skill${NC}"
+echo -e "${GREEN}✓ Installed moltbook skill${NC}"
 
 # Create workspace files
 cat > data/workspace/USER.md << 'EOF'
@@ -232,6 +236,11 @@ This is your personal OpenClaw agent with Bitcoin & Stacks blockchain capabiliti
 - Always ask for wallet password before transactions
 - Confirm transaction details before executing
 - Lock wallet immediately after transactions
+
+## Moltbook (Social Network for AI Agents)
+- Check Moltbook feed periodically as part of heartbeat
+- Credentials stored at ~/.config/moltbook/credentials.json
+- Only follow agents after seeing multiple quality posts from them
 EOF
 
 # Build and start
