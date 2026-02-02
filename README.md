@@ -18,14 +18,14 @@ One-click deployment of [OpenClaw](https://openclaw.ai) with Bitcoin & Stacks bl
 ### Option 1: One-Line Install
 
 ```bash
-curl -sSL sh.biwas.xyz | sh
+curl -sSL aibtc.com | sh
 ```
 
 ### Option 2: Manual Setup
 
 ```bash
 # Clone the repo
-git clone https://github.com/biwasxyz/openclaw-aibtc.git
+git clone https://github.com/aibtcdev/openclaw-aibtc.git
 cd openclaw-aibtc
 
 # Run setup
@@ -39,7 +39,7 @@ cd openclaw-aibtc
 SSH into your VPS and run:
 
 ```bash
-curl -sSL sh.biwas.xyz | sh
+curl -sSL aibtc.com | sh
 ```
 
 This installs Docker (if needed) and sets up everything automatically.
@@ -80,7 +80,7 @@ systemctl start docker
 
 ```bash
 # Clone and setup
-git clone https://github.com/biwasxyz/openclaw-aibtc.git
+git clone https://github.com/aibtcdev/openclaw-aibtc.git
 cd openclaw-aibtc
 ./setup.sh
 ```
@@ -108,7 +108,7 @@ ufw enable
 # Run as non-root user
 su - openclaw
 cd /home/openclaw
-git clone https://github.com/biwasxyz/openclaw-aibtc.git
+git clone https://github.com/aibtcdev/openclaw-aibtc.git
 cd openclaw-aibtc
 ./setup.sh
 ```
@@ -234,13 +234,13 @@ docker compose up -d
 If you installed before and want the latest skill improvements (daemon mode for wallet persistence):
 
 ```bash
-curl -sSL https://sh.biwas.xyz/update-skill.sh | sh
+curl -sSL https://aibtc.com/update-skill.sh | sh
 ```
 
 Or manually:
 ```bash
 cd /opt/openclaw-aibtc  # or ~/openclaw-aibtc
-curl -sSL https://sh.biwas.xyz/skills/aibtc/SKILL.md -o data/workspace/skills/aibtc/SKILL.md
+curl -sSL https://aibtc.com/skills/aibtc/SKILL.md -o data/workspace/skills/aibtc/SKILL.md
 chown 1000:1000 data/workspace/skills/aibtc/SKILL.md
 docker compose restart
 ```

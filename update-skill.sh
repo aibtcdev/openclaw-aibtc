@@ -1,6 +1,6 @@
 #!/bin/sh
 # Update skills (aibtc + moltbook) for existing installations
-# Run this on your VPS: curl -sSL https://sh.biwas.xyz/update-skill.sh | sh
+# Run this on your VPS: curl -sSL aibtc.com/update | sh
 
 set -e
 
