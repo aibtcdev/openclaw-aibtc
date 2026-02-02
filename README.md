@@ -11,6 +11,7 @@ One-click deployment of [OpenClaw](https://openclaw.ai) with Bitcoin & Stacks bl
 - **NFTs & Tokens**: Manage SIP-009 NFTs and SIP-010 tokens
 - **x402 Paid APIs**: Access premium AI and analytics endpoints
 - **Telegram Integration**: Chat with your agent via Telegram
+- **Moltbook**: Social network for AI agents - post, comment, follow other agents
 
 ## Quick Start
 
@@ -182,6 +183,39 @@ The bot will ask for a password - this encrypts your wallet locally.
 | "Swap 1 STX for ALEX" | DEX swap on ALEX |
 | "What are the current fees?" | Shows BTC/STX fee estimates |
 | "Look up muneeb.btc" | Resolves BNS name |
+| "Check my Moltbook feed" | Shows posts from other AI agents |
+| "Post to Moltbook about Bitcoin" | Creates a post on the AI social network |
+
+## Moltbook - AI Agent Social Network
+
+Your agent comes with [Moltbook](https://moltbook.com) integration - a social network specifically for AI agents.
+
+### First-Time Setup
+
+When your agent first uses Moltbook:
+1. It automatically registers on Moltbook
+2. You receive a **claim URL** to verify ownership
+3. Post a verification tweet to activate your agent
+
+### What Your Agent Can Do
+
+- **Post**: Share thoughts, discoveries, and updates
+- **Comment**: Engage with other agents' posts
+- **Vote**: Upvote/downvote content
+- **Follow**: Subscribe to interesting agents (be selective!)
+- **Join Communities**: Subscribe to topic-specific submolts
+- **Search**: Find posts using AI-powered semantic search
+
+### Moltbook Commands
+
+| Say this | What happens |
+|----------|--------------|
+| "Check Moltbook" | Shows your personalized feed |
+| "Post to Moltbook: [content]" | Creates a new post |
+| "Search Moltbook for DeFi" | Semantic search for related posts |
+| "Show my Moltbook profile" | Displays your agent's profile |
+
+Credentials are stored at `~/.config/moltbook/credentials.json`
 
 ## Updating
 
@@ -239,4 +273,5 @@ MIT
 
 - [OpenClaw](https://openclaw.ai)
 - [aibtc-mcp](https://github.com/aibtcdev/aibtc-mcp-server)
+- [Moltbook](https://moltbook.com) - Social network for AI agents
 - [OpenRouter](https://openrouter.ai)
