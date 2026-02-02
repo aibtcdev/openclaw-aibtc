@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 # Colors
@@ -8,7 +8,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-echo -e "${BLUE}"
+printf "${BLUE}"
 echo "╔═══════════════════════════════════════════════════════════╗"
 echo "║                                                           ║"
 echo "║   ₿  OpenClaw + aibtc                                     ║"
@@ -16,29 +16,29 @@ echo "║                                                           ║"
 echo "║   Bitcoin & Stacks AI Agent (Docker Desktop)              ║"
 echo "║                                                           ║"
 echo "╚═══════════════════════════════════════════════════════════╝"
-echo -e "${NC}"
+printf "${NC}\n"
 
 # Check for Docker
-if ! command -v docker &> /dev/null; then
-    echo -e "${RED}Error: Docker is not installed.${NC}"
+if ! command -v docker >/dev/null 2>&1; then
+    printf "${RED}Error: Docker is not installed.${NC}\n"
     echo "Please install Docker Desktop: https://docs.docker.com/get-docker/"
     exit 1
 fi
 
-if ! docker info &> /dev/null; then
-    echo -e "${RED}Error: Docker is not running.${NC}"
+if ! docker info >/dev/null 2>&1; then
+    printf "${RED}Error: Docker is not running.${NC}\n"
     echo "Please start Docker Desktop."
     exit 1
 fi
 
-echo -e "${GREEN}✓ Docker is running${NC}"
+printf "${GREEN}✓ Docker is running${NC}\n"
 
-if ! docker compose version &> /dev/null; then
-    echo -e "${RED}Error: Docker Compose is not available.${NC}"
+if ! docker compose version >/dev/null 2>&1; then
+    printf "${RED}Error: Docker Compose is not available.${NC}\n"
     exit 1
 fi
 
-echo -e "${GREEN}✓ Docker Compose available${NC}"
+printf "${GREEN}✓ Docker Compose available${NC}\n"
 echo ""
 
 # Install directory
@@ -46,41 +46,48 @@ INSTALL_DIR="$HOME/openclaw-aibtc"
 
 # Check existing installation
 if [ -f "$INSTALL_DIR/.env" ]; then
-    echo -e "${YELLOW}Found existing installation at $INSTALL_DIR${NC}"
-    read -p "Reconfigure? (y/N): " RECONFIG < /dev/tty
-    if [[ ! "$RECONFIG" =~ ^[Yy]$ ]]; then
-        echo -e "${BLUE}Starting existing installation...${NC}"
-        cd "$INSTALL_DIR"
-        docker compose up -d
-        echo -e "${GREEN}✓ Agent started!${NC}"
-        echo "Message your Telegram bot to chat."
-        exit 0
-    fi
+    printf "${YELLOW}Found existing installation at $INSTALL_DIR${NC}\n"
+    printf "Reconfigure? (y/N): "
+    read RECONFIG < /dev/tty
+    case "$RECONFIG" in
+        [Yy]|[Yy][Ee][Ss]) ;;
+        *)
+            printf "${BLUE}Starting existing installation...${NC}\n"
+            cd "$INSTALL_DIR"
+            docker compose up -d
+            printf "${GREEN}✓ Agent started!${NC}\n"
+            echo "Message your Telegram bot to chat."
+            exit 0
+            ;;
+    esac
 fi
 
 # Get configuration
-echo -e "${YELLOW}Step 1: OpenRouter API Key${NC}"
+printf "${YELLOW}Step 1: OpenRouter API Key${NC}\n"
 echo "Get your key at: https://openrouter.ai/keys"
-read -p "Enter OpenRouter API Key: " OPENROUTER_KEY < /dev/tty
+printf "Enter OpenRouter API Key: "
+read OPENROUTER_KEY < /dev/tty
 if [ -z "$OPENROUTER_KEY" ]; then
-    echo -e "${RED}Error: OpenRouter API key is required.${NC}"
+    printf "${RED}Error: OpenRouter API key is required.${NC}\n"
     exit 1
 fi
 
 echo ""
-echo -e "${YELLOW}Step 2: Telegram Bot Token${NC}"
+printf "${YELLOW}Step 2: Telegram Bot Token${NC}\n"
 echo "Create a bot via @BotFather on Telegram"
-read -p "Enter Telegram Bot Token: " TELEGRAM_TOKEN < /dev/tty
+printf "Enter Telegram Bot Token: "
+read TELEGRAM_TOKEN < /dev/tty
 if [ -z "$TELEGRAM_TOKEN" ]; then
-    echo -e "${RED}Error: Telegram bot token is required.${NC}"
+    printf "${RED}Error: Telegram bot token is required.${NC}\n"
     exit 1
 fi
 
 echo ""
-echo -e "${YELLOW}Step 3: Network${NC}"
+printf "${YELLOW}Step 3: Network${NC}\n"
 echo "1) mainnet (real Bitcoin/Stacks)"
 echo "2) testnet (test tokens only)"
-read -p "Select [1]: " NETWORK_CHOICE < /dev/tty
+printf "Select [1]: "
+read NETWORK_CHOICE < /dev/tty
 if [ "$NETWORK_CHOICE" = "2" ]; then
     NETWORK="testnet"
 else
@@ -92,7 +99,7 @@ GATEWAY_TOKEN=$(openssl rand -hex 32 2>/dev/null || head -c 64 /dev/urandom | xx
 
 # Create directory structure
 echo ""
-echo -e "${BLUE}Creating installation...${NC}"
+printf "${BLUE}Creating installation...${NC}\n"
 mkdir -p "$INSTALL_DIR/data/config"
 mkdir -p "$INSTALL_DIR/data/workspace/skills/aibtc"
 mkdir -p "$INSTALL_DIR/data/workspace/memory"
@@ -385,34 +392,34 @@ This is your personal OpenClaw agent with Bitcoin & Stacks blockchain capabiliti
 EOF
 
 # Build and start
-echo -e "${BLUE}Building Docker image (this may take a minute)...${NC}"
+printf "${BLUE}Building Docker image (this may take a minute)...${NC}\n"
 docker compose build --quiet
 
-echo -e "${BLUE}Starting agent...${NC}"
+printf "${BLUE}Starting agent...${NC}\n"
 docker compose up -d
 
 sleep 5
 
 if docker compose ps | grep -q "Up"; then
     echo ""
-    echo -e "${GREEN}╔═══════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${GREEN}║   ✓ Setup Complete!                                       ║${NC}"
-    echo -e "${GREEN}╚═══════════════════════════════════════════════════════════╝${NC}"
+    printf "${GREEN}╔═══════════════════════════════════════════════════════════╗${NC}\n"
+    printf "${GREEN}║   ✓ Setup Complete!                                       ║${NC}\n"
+    printf "${GREEN}╚═══════════════════════════════════════════════════════════╝${NC}\n"
     echo ""
-    echo -e "📱 ${YELLOW}Message your Telegram bot to start chatting!${NC}"
+    printf "${YELLOW}Message your Telegram bot to start chatting!${NC}\n"
     echo ""
-    echo -e "First steps:"
+    echo "First steps:"
     echo "  1. Message your bot on Telegram"
     echo "  2. Say: \"Create a new Bitcoin wallet\""
     echo "  3. Set a strong password when prompted"
     echo ""
-    echo -e "Commands:"
+    echo "Commands:"
     echo "  cd $INSTALL_DIR"
     echo "  docker compose logs -f     # View logs"
     echo "  docker compose restart     # Restart"
     echo "  docker compose down        # Stop"
     echo ""
 else
-    echo -e "${RED}Error: Failed to start. Check: docker compose logs${NC}"
+    printf "${RED}Error: Failed to start. Check: docker compose logs${NC}\n"
     exit 1
 fi
