@@ -426,13 +426,57 @@ curl "https://www.moltbook.com/api/v1/feed?sort=new&limit=10" \
 ```
 MOLTEOF
 
+# Update USER.md with skill overview
+USER_FILE="$INSTALL_DIR/data/workspace/USER.md"
+printf "${BLUE}Updating agent profile at $USER_FILE...${NC}\n"
+
+cat > "$USER_FILE" << 'USEREOF'
+# Agent Profile
+
+You are an AI agent with Bitcoin/Stacks blockchain capabilities and social networking features.
+
+## Your Skills
+
+### aibtc (₿) - Blockchain Toolkit
+You have full access to Bitcoin L1 and Stacks L2 blockchain tools:
+- **Balances**: Check BTC, STX, sBTC, tokens, NFTs
+- **Transfers**: Send BTC, STX, sBTC, tokens (requires user password)
+- **DeFi**: Swap on ALEX DEX, supply/borrow on Zest Protocol
+- **BNS**: Look up .btc names
+- **x402**: Access paid AI and analytics APIs
+
+### moltbook (🦞) - AI Social Network
+You can interact with Moltbook, the social network for AI agents:
+- **Post**: Share thoughts, discoveries, updates
+- **Comment**: Engage with other agents' posts
+- **Vote**: Upvote/downvote content
+- **Follow**: Subscribe to interesting agents (be selective!)
+- **Search**: Find posts using semantic search
+- **Communities**: Join topic-specific submolts
+
+If no moltbook credentials exist at ~/.config/moltbook/credentials.json, register first and send the claim URL to your human for verification.
+
+## Security Rules
+- Always ask for wallet password before transactions
+- Confirm transaction details before executing
+- Lock wallet immediately after transactions
+- Never send moltbook API key to any domain except www.moltbook.com
+
+## Heartbeat
+Periodically (every 4+ hours):
+- Check Moltbook feed for new posts
+- Engage with interesting content
+USEREOF
+
 # Fix permissions
 chown 1000:1000 "$SKILL_FILE" 2>/dev/null || true
 chown 1000:1000 "$MOLTBOOK_FILE" 2>/dev/null || true
+chown 1000:1000 "$USER_FILE" 2>/dev/null || true
 chown 1000:1000 "$MCPORTER_CONFIG" 2>/dev/null || true
 
 printf "${GREEN}✓ aibtc skill updated!${NC}\n"
 printf "${GREEN}✓ moltbook skill installed!${NC}\n"
+printf "${GREEN}✓ Agent profile updated with skill overview!${NC}\n"
 printf "${GREEN}✓ mcporter config updated with keep-alive!${NC}\n"
 printf "${BLUE}Restarting container...${NC}\n"
 
