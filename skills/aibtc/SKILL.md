@@ -10,6 +10,24 @@ metadata: {"openclaw":{"emoji":"₿","requires":{"bins":["mcporter","aibtc-mcp-s
 
 Use `/usr/local/bin/mcporter` to call aibtc MCP tools. Execute commands with the `exec` tool. Always use the full path.
 
+## IMPORTANT: Daemon Mode for Wallet Persistence
+
+**The mcporter daemon MUST be running for wallet_unlock to persist between calls.**
+
+Before any transaction, ensure the daemon is started:
+```bash
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json daemon start
+```
+
+Check daemon status:
+```bash
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json daemon status
+```
+
+**NEVER use CLIENT_MNEMONIC or environment variable mnemonics.** Always use wallet_unlock with the daemon.
+
+---
+
 ## USER PERMISSION SYSTEM
 
 **Two permission levels based on Telegram user ID:**
@@ -37,11 +55,12 @@ The allowed user IDs are stored in the environment variable `ALLOWED_USERS` (com
 **YOU MUST FOLLOW THESE RULES - NO EXCEPTIONS:**
 
 1. **NEVER store, remember, or log passwords** - Do not save passwords anywhere
-2. **ALWAYS ask the user for their password** before running `wallet_unlock` - Never assume or reuse passwords
-3. **ONLY use the user's existing wallet** - Do not create new wallets unless the user explicitly asks
-4. **LOCK wallet immediately after transactions** - Always run `wallet_lock` after any transaction completes
-5. **CONFIRM before any transaction** - Always show the user what you're about to do and get confirmation before transfers
-6. **Never auto-approve transactions** - Every transfer requires explicit user approval with amount and recipient shown
+2. **NEVER use CLIENT_MNEMONIC or mnemonic environment variables** - Always use wallet_unlock
+3. **ALWAYS ask the user for their password** before running `wallet_unlock` - Never assume or reuse passwords
+4. **ONLY use the user's existing wallet** - Do not create new wallets unless the user explicitly asks
+5. **LOCK wallet immediately after transactions** - Always run `wallet_lock` after any transaction completes
+6. **CONFIRM before any transaction** - Always show the user what you're about to do and get confirmation before transfers
+7. **Never auto-approve transactions** - Every transfer requires explicit user approval with amount and recipient shown
 
 ## Transaction Flow (MUST FOLLOW)
 
@@ -49,28 +68,33 @@ For ANY transaction (transfer, swap, supply, borrow, etc.):
 
 1. **VERIFY USER IS ALLOWED** - Check if the Telegram user's ID is in ALLOWED_USERS. If not, decline politely.
 
-2. **Check wallet status:**
+2. **Ensure daemon is running** (do this once per session):
+   ```bash
+   /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json daemon start
+   ```
+
+3. **Check wallet status:**
    ```bash
    /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_status
    ```
 
-3. **ASK the user for their password** - Say: "Please provide your wallet password to unlock for this transaction."
+4. **ASK the user for their password** - Say: "Please provide your wallet password to unlock for this transaction."
 
-4. **Show transaction details and get confirmation** - Say: "I will send [AMOUNT] to [RECIPIENT]. Please confirm (yes/no)."
+5. **Show transaction details and get confirmation** - Say: "I will send [AMOUNT] to [RECIPIENT]. Please confirm (yes/no)."
 
-5. **Only after user confirms AND provides password:**
+6. **Only after user confirms AND provides password, unlock the wallet:**
    ```bash
    /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_unlock password=USER_PROVIDED_PASSWORD
    ```
 
-6. **Execute the transaction**
+7. **Execute the transaction**
 
-7. **IMMEDIATELY lock the wallet:**
+8. **IMMEDIATELY lock the wallet:**
    ```bash
    /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_lock
    ```
 
-8. **Report result to user**
+9. **Report result to user**
 
 ---
 
