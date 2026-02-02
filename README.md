@@ -31,6 +31,87 @@ cd openclaw-aibtc
 ./setup.sh
 ```
 
+## Deploy to VPS
+
+### One-Command VPS Deploy
+
+SSH into your VPS and run:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/biwasxyz/openclaw-aibtc/main/vps-setup.sh | bash
+```
+
+This installs Docker (if needed) and sets up everything automatically.
+
+### Manual VPS Setup
+
+#### Step 1: Get a VPS
+
+Any provider works. Recommended:
+- [DigitalOcean](https://digitalocean.com) - $6/mo droplet
+- [Hetzner](https://hetzner.com) - $4/mo VPS
+- [Vultr](https://vultr.com) - $6/mo instance
+- [Linode](https://linode.com) - $5/mo nanode
+
+**Minimum specs:** 1 CPU, 1GB RAM, 20GB disk
+
+#### Step 2: SSH into your VPS
+
+```bash
+ssh root@your-vps-ip
+```
+
+#### Step 3: Install Docker (Ubuntu/Debian)
+
+```bash
+# Update system
+apt update && apt upgrade -y
+
+# Install Docker
+curl -fsSL https://get.docker.com | sh
+
+# Start Docker
+systemctl enable docker
+systemctl start docker
+```
+
+#### Step 4: Deploy OpenClaw + aibtc
+
+```bash
+# Clone and setup
+git clone https://github.com/biwasxyz/openclaw-aibtc.git
+cd openclaw-aibtc
+./setup.sh
+```
+
+#### Step 5: Keep it running
+
+The agent auto-restarts on reboot. To check status:
+
+```bash
+docker compose ps
+docker compose logs -f
+```
+
+### VPS Security Tips
+
+```bash
+# Create non-root user
+adduser openclaw
+usermod -aG docker openclaw
+
+# Setup firewall (optional - Telegram works without open ports)
+ufw allow ssh
+ufw enable
+
+# Run as non-root user
+su - openclaw
+cd /home/openclaw
+git clone https://github.com/biwasxyz/openclaw-aibtc.git
+cd openclaw-aibtc
+./setup.sh
+```
+
 ## Requirements
 
 - Docker & Docker Compose
