@@ -17,7 +17,7 @@ One-click deployment of [OpenClaw](https://openclaw.ai) with Bitcoin & Stacks bl
 ### Option 1: One-Line Install
 
 ```bash
-curl -sSL https://sh.biwas.xyz | bash
+curl -sSL sh.biwas.xyz | sh
 ```
 
 ### Option 2: Manual Setup
@@ -38,7 +38,7 @@ cd openclaw-aibtc
 SSH into your VPS and run:
 
 ```bash
-curl -sSL https://sh.biwas.xyz | bash
+curl -sSL sh.biwas.xyz | sh
 ```
 
 This installs Docker (if needed) and sets up everything automatically.

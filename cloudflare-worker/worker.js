@@ -185,8 +185,8 @@ const HTML = `<!DOCTYPE html>
     <div class="card">
       <h2>🚀 Quick Install</h2>
       <div class="command-box">
-        <code>curl -sSL https://sh.biwas.xyz | bash</code>
-        <button class="copy-btn" onclick="copyCommand(this, 'curl -sSL https://sh.biwas.xyz | bash')">Copy</button>
+        <code>curl -sSL sh.biwas.xyz | sh</code>
+        <button class="copy-btn" onclick="copyCommand(this, 'curl -sSL sh.biwas.xyz | sh')">Copy</button>
       </div>
       <p class="requirements">Works on any VPS (Ubuntu, Debian, CentOS) • Installs Docker automatically</p>
     </div>
@@ -194,8 +194,8 @@ const HTML = `<!DOCTYPE html>
     <div class="card">
       <h2>💻 Local (Docker Desktop)</h2>
       <div class="command-box">
-        <code>curl -sSL https://sh.biwas.xyz/local | bash</code>
-        <button class="copy-btn" onclick="copyCommand(this, 'curl -sSL https://sh.biwas.xyz/local | bash')">Copy</button>
+        <code>curl -sSL sh.biwas.xyz/local | sh</code>
+        <button class="copy-btn" onclick="copyCommand(this, 'curl -sSL sh.biwas.xyz/local | sh')">Copy</button>
       </div>
     </div>
 
