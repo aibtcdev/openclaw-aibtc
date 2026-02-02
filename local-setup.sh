@@ -87,18 +87,6 @@ else
     NETWORK="mainnet"
 fi
 
-echo ""
-echo -e "${YELLOW}Step 4: Allowed Users${NC}"
-echo "Only these Telegram users can execute transactions."
-echo "Others can use read-only tools (check balances, etc.)"
-echo ""
-echo "Find your ID: Message @userinfobot on Telegram"
-read -p "Enter Telegram user IDs (comma-separated): " ALLOWED_USERS
-if [ -z "$ALLOWED_USERS" ]; then
-    echo -e "${RED}Error: At least one user ID required.${NC}"
-    exit 1
-fi
-
 # Generate token
 GATEWAY_TOKEN=$(openssl rand -hex 32 2>/dev/null || head -c 64 /dev/urandom | xxd -p | tr -d '\n' | head -c 64)
 
@@ -115,7 +103,6 @@ cat > .env << EOF
 OPENROUTER_API_KEY=${OPENROUTER_KEY}
 TELEGRAM_BOT_TOKEN=${TELEGRAM_TOKEN}
 NETWORK=${NETWORK}
-ALLOWED_USERS=${ALLOWED_USERS}
 OPENCLAW_GATEWAY_TOKEN=${GATEWAY_TOKEN}
 EOF
 
@@ -222,29 +209,7 @@ metadata: {"openclaw":{"emoji":"₿","requires":{"bins":["mcporter","aibtc-mcp-s
 
 Use `/usr/local/bin/mcporter` to call aibtc MCP tools. Execute commands with the `exec` tool. Always use the full path.
 
-## USER PERMISSION SYSTEM
-
-**Two permission levels based on Telegram user ID:**
-
-1. **Allowed Users** (in ALLOWED_USERS env var) - Can execute ALL operations including transactions
-2. **Public Users** (everyone else) - Can ONLY use read-only tools
-
-### Checking Permissions
-
-The allowed user IDs are stored in the environment variable `ALLOWED_USERS` (comma-separated).
-
-**BEFORE ANY WRITE OPERATION, you MUST:**
-1. Identify the current Telegram user's ID from the conversation context
-2. Check if their ID is in the ALLOWED_USERS list
-3. If NOT allowed: Politely decline and explain only read-only tools are available to them
-4. If allowed: Proceed with the security rules below
-
-**Example decline message:**
-> "I can help you check balances, look up BNS names, and view DeFi info, but transaction operations are restricted to authorized users only."
-
----
-
-## CRITICAL SECURITY RULES (For Allowed Users)
+## CRITICAL SECURITY RULES
 
 **YOU MUST FOLLOW THESE RULES - NO EXCEPTIONS:**
 
@@ -259,36 +224,34 @@ The allowed user IDs are stored in the environment variable `ALLOWED_USERS` (com
 
 For ANY transaction (transfer, swap, supply, borrow, etc.):
 
-1. **VERIFY USER IS ALLOWED** - Check if the Telegram user's ID is in ALLOWED_USERS. If not, decline politely.
-
-2. **Check wallet status:**
+1. **Check wallet status:**
    ```bash
    /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_status
    ```
 
-3. **ASK the user for their password** - Say: "Please provide your wallet password to unlock for this transaction."
+2. **ASK the user for their password** - Say: "Please provide your wallet password to unlock for this transaction."
 
-4. **Show transaction details and get confirmation** - Say: "I will send [AMOUNT] to [RECIPIENT]. Please confirm (yes/no)."
+3. **Show transaction details and get confirmation** - Say: "I will send [AMOUNT] to [RECIPIENT]. Please confirm (yes/no)."
 
-5. **Only after user confirms AND provides password:**
+4. **Only after user confirms AND provides password:**
    ```bash
    /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_unlock password=USER_PROVIDED_PASSWORD
    ```
 
-6. **Execute the transaction**
+5. **Execute the transaction**
 
-7. **IMMEDIATELY lock the wallet:**
+6. **IMMEDIATELY lock the wallet:**
    ```bash
    /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_lock
    ```
 
-8. **Report result to user**
+7. **Report result to user**
 
 ---
 
-## Read-Only Operations (Available to EVERYONE)
+## Read-Only Operations (No Password Needed)
 
-These operations are safe, don't require wallet unlock, and can be used by any user:
+These operations are safe and don't require wallet unlock:
 
 ```bash
 # Check balances
@@ -320,11 +283,9 @@ These operations are safe, don't require wallet unlock, and can be used by any u
 
 ---
 
-## Write Operations (ALLOWED USERS ONLY)
+## Write Operations (REQUIRE Password + Confirmation)
 
-**RESTRICTED: Only users in ALLOWED_USERS can execute these operations.**
-
-**REMEMBER: Verify user is allowed, ask for password, confirm details, then lock after!**
+**REMEMBER: Ask for password, confirm details, then lock after!**
 
 ### Transfers
 ```bash
@@ -358,9 +319,7 @@ These operations are safe, don't require wallet unlock, and can be used by any u
 
 ---
 
-## Wallet Management (ALLOWED USERS ONLY)
-
-**RESTRICTED: Only users in ALLOWED_USERS can manage wallets.**
+## Wallet Management
 
 ```bash
 # Check wallet status
