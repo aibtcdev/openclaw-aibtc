@@ -272,7 +272,7 @@ metadata: {"openclaw":{"emoji":"₿","requires":{"bins":["mcporter","aibtc-mcp-s
 
 # aibtc - Bitcoin & Stacks Blockchain Tools
 
-Use `/usr/local/bin/mcporter` to call aibtc MCP tools. Execute commands with the `exec` tool. Always use the full path.
+Use the commands EXACTLY as shown below. **Do not omit the `--config` flag** - wallet state won't persist without it.
 
 ## IMPORTANT: Daemon Mode for Wallet Persistence
 
