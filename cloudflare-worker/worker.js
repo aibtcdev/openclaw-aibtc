@@ -208,6 +208,12 @@ const HTML = `<!DOCTYPE html>
           <li>OpenRouter API Key → <a href="https://openrouter.ai/keys" target="_blank" style="color: #f7931a;">openrouter.ai/keys</a></li>
           <li>Telegram Bot Token → Message <a href="https://t.me/BotFather" target="_blank" style="color: #f7931a;">@BotFather</a></li>
         </ul>
+        <p style="margin-bottom: 0.5rem;"><strong>For VPS deploy:</strong></p>
+        <ul style="margin-left: 1.5rem;">
+          <li>Create a VPS (2GB RAM, 25GB disk) on <a href="https://digitalocean.com" target="_blank" style="color: #f7931a;">DigitalOcean</a>, <a href="https://hetzner.com" target="_blank" style="color: #f7931a;">Hetzner</a>, or <a href="https://vultr.com" target="_blank" style="color: #f7931a;">Vultr</a></li>
+          <li>Choose Ubuntu 24.04 with SSH key authentication</li>
+          <li>SSH in: <code style="background: #0d0d0d; padding: 2px 6px; border-radius: 4px;">ssh root@your-vps-ip</code></li>
+        </ul>
       </div>
     </div>
 
