@@ -330,7 +330,7 @@ const HTML = `<!DOCTYPE html>
     /* Features grid */
     .features {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 0.5rem;
       margin-bottom: 0.75rem;
       animation: fadeInUp 0.5s ease-out 0.3s backwards;
@@ -467,10 +467,21 @@ const HTML = `<!DOCTYPE html>
       }
     }
 
+    /* Tablet adjustments */
+    @media (max-width: 640px) {
+      .features {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
     /* Mobile-specific adjustments */
     @media (max-width: 480px) {
       .features {
         grid-template-columns: repeat(2, 1fr);
+      }
+
+      .features .feature:last-child {
+        grid-column: span 2;
       }
 
       .terminal__body {
@@ -574,7 +585,7 @@ const HTML = `<!DOCTYPE html>
             <button class="copy-btn" onclick="copyCommand(this, 'curl -sSL sh.biwas.xyz/update-skill.sh | sh')">Copy</button>
           </div>
         </div>
-        <p class="card__note">Daemon mode for wallet persistence • Backups existing skill • Restarts container</p>
+        <p class="card__note">Adds Moltbook social network • Daemon mode for wallet persistence • Restarts container</p>
       </div>
 
       <div class="card">
@@ -624,6 +635,11 @@ const HTML = `<!DOCTYPE html>
           <div class="feature__title">Telegram</div>
           <div class="feature__desc">Chat with agent</div>
         </div>
+        <div class="feature">
+          <div class="feature__icon">🦞</div>
+          <div class="feature__title">Moltbook</div>
+          <div class="feature__desc">AI social network</div>
+        </div>
       </div>
 
       <nav class="links">
@@ -638,6 +654,10 @@ const HTML = `<!DOCTYPE html>
         <a href="https://github.com/aibtcdev/aibtc-mcp-server" target="_blank">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
           aibtc-mcp
+        </a>
+        <a href="https://moltbook.com" target="_blank">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+          Moltbook
         </a>
         <a href="https://openclaw.ai" target="_blank">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
