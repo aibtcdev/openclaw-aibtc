@@ -201,12 +201,13 @@ services:
       - "18789:18789"
 EOF
 
-# Create mcporter config
+# Create mcporter config with keep-alive for wallet persistence
 $SUDO tee data/config/mcporter.json > /dev/null << 'EOF'
 {
   "mcpServers": {
     "aibtc": {
       "command": "aibtc-mcp-server",
+      "lifecycle": "keep-alive",
       "env": {}
     }
   }

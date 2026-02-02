@@ -208,13 +208,32 @@ These operations are safe and don't require wallet unlock:
 6. "Transaction submitted! TxID: abc123... Your wallet has been locked for security."
 SKILLEOF
 
+# Update mcporter config with keep-alive
+MCPORTER_CONFIG="$INSTALL_DIR/data/config/mcporter.json"
+printf "${BLUE}Updating mcporter config at $MCPORTER_CONFIG...${NC}\n"
+
+cat > "$MCPORTER_CONFIG" << 'EOF'
+{
+  "mcpServers": {
+    "aibtc": {
+      "command": "aibtc-mcp-server",
+      "lifecycle": "keep-alive",
+      "env": {}
+    }
+  }
+}
+EOF
+
 # Fix permissions
 chown 1000:1000 "$SKILL_FILE" 2>/dev/null || true
+chown 1000:1000 "$MCPORTER_CONFIG" 2>/dev/null || true
 
 printf "${GREEN}✓ Skill updated!${NC}\n"
+printf "${GREEN}✓ mcporter config updated with keep-alive!${NC}\n"
 printf "${BLUE}Restarting container...${NC}\n"
 
 cd "$INSTALL_DIR"
 docker compose restart
 
 printf "${GREEN}✓ Done! The agent now uses daemon mode for wallet persistence.${NC}\n"
+printf "${BLUE}Note: The daemon will auto-start on first mcporter call.${NC}\n"
