@@ -285,7 +285,7 @@ export default {
         scriptPath = '/vps-setup.sh';
         break;
       case '/local':
-        scriptPath = '/setup.sh';
+        scriptPath = '/local-setup.sh';
         break;
       default:
         scriptPath = path;
