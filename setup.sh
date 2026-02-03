@@ -117,6 +117,59 @@ if [ "$SKIP_CONFIG" != "true" ]; then
         exit 1
     fi
 
+    # Wallet password
+    echo ""
+    echo -e "${YELLOW}Step 5: Agent Wallet Password${NC}"
+    echo "Your agent will have its own Bitcoin wallet."
+    echo "This password is stored securely so the agent can self-unlock."
+    echo ""
+    read -s -p "Enter wallet password: " WALLET_PASSWORD
+    echo ""
+    if [ -z "$WALLET_PASSWORD" ]; then
+        echo -e "${RED}Error: Wallet password is required.${NC}"
+        exit 1
+    fi
+    read -s -p "Confirm wallet password: " WALLET_PASSWORD_CONFIRM
+    echo ""
+    if [ "$WALLET_PASSWORD" != "$WALLET_PASSWORD_CONFIRM" ]; then
+        echo -e "${RED}Error: Passwords do not match.${NC}"
+        exit 1
+    fi
+
+    # Autonomy level
+    echo ""
+    echo -e "${YELLOW}Step 6: Autonomy Level${NC}"
+    echo "How independently should your agent operate?"
+    echo ""
+    echo "  1) Conservative  - Agent asks before most transactions (\$1/day limit)"
+    echo "  2) Balanced       - Agent handles routine ops autonomously (\$10/day limit) [default]"
+    echo "  3) Autonomous     - Agent operates freely within limits (\$50/day limit)"
+    echo ""
+    read -p "Select autonomy level [2]: " AUTONOMY_CHOICE
+
+    case "$AUTONOMY_CHOICE" in
+        1)
+            AUTONOMY_LEVEL="conservative"
+            DAILY_LIMIT="1.00"
+            PER_TX_LIMIT="0.50"
+            TRUST_LEVEL="restricted"
+            ;;
+        3)
+            AUTONOMY_LEVEL="autonomous"
+            DAILY_LIMIT="50.00"
+            PER_TX_LIMIT="25.00"
+            TRUST_LEVEL="elevated"
+            ;;
+        *)
+            AUTONOMY_LEVEL="balanced"
+            DAILY_LIMIT="10.00"
+            PER_TX_LIMIT="5.00"
+            TRUST_LEVEL="standard"
+            ;;
+    esac
+
+    echo -e "${GREEN}✓ Autonomy: ${AUTONOMY_LEVEL} (daily limit: \$${DAILY_LIMIT})${NC}"
+
     # Generate gateway token
     GATEWAY_TOKEN=$(openssl rand -hex 32 2>/dev/null || head -c 64 /dev/urandom | xxd -p | tr -d '\n' | head -c 64)
 
@@ -236,6 +289,33 @@ echo -e "${BLUE}Setting up memory templates...${NC}"
 cp -r templates/memory/* data/workspace/memory/
 echo -e "${GREEN}✓ Installed memory templates${NC}"
 
+# Save wallet password for agent self-unlock
+if [ -n "$WALLET_PASSWORD" ]; then
+    echo -e "${BLUE}Saving wallet password...${NC}"
+    echo "$WALLET_PASSWORD" > data/config/.wallet_password
+    chmod 600 data/config/.wallet_password
+    # Also save pending password for initial wallet creation
+    echo "$WALLET_PASSWORD" > data/workspace/.pending_wallet_password
+    chmod 600 data/workspace/.pending_wallet_password
+    echo -e "${GREEN}✓ Wallet password stored securely${NC}"
+fi
+
+# Patch state.json with chosen autonomy config
+if [ -n "$AUTONOMY_LEVEL" ]; then
+    echo -e "${BLUE}Configuring autonomy level...${NC}"
+    # Use a temporary file to avoid issues with in-place editing
+    STATE_FILE="data/workspace/memory/state.json"
+    TMP_STATE=$(mktemp)
+    # Replace autonomy values using sed
+    sed -e "s/\"autonomyLevel\": \"balanced\"/\"autonomyLevel\": \"${AUTONOMY_LEVEL}\"/" \
+        -e "s/\"dailyAutoLimit\": 10.00/\"dailyAutoLimit\": ${DAILY_LIMIT}/" \
+        -e "s/\"perTransactionLimit\": 5.00/\"perTransactionLimit\": ${PER_TX_LIMIT}/" \
+        -e "s/\"trustLevel\": \"standard\"/\"trustLevel\": \"${TRUST_LEVEL}\"/" \
+        "$STATE_FILE" > "$TMP_STATE"
+    mv "$TMP_STATE" "$STATE_FILE"
+    echo -e "${GREEN}✓ Autonomy level: ${AUTONOMY_LEVEL}${NC}"
+fi
+
 # Build and start
 echo ""
 echo -e "${BLUE}Building Docker image...${NC}"
@@ -270,8 +350,8 @@ if docker compose ps | grep -q "Up"; then
     echo ""
     echo -e "${YELLOW}First steps:${NC}"
     echo "  1. Message your Telegram bot"
-    echo "  2. Say: \"Create a new Bitcoin wallet\""
-    echo "  3. Set a strong password when prompted"
+    echo "  2. The agent will create its wallet and start operating"
+    echo "  3. Autonomy level: ${AUTONOMY_LEVEL:-balanced} (change in data/workspace/memory/state.json)"
     echo ""
 else
     echo -e "${RED}Error: Services failed to start.${NC}"
