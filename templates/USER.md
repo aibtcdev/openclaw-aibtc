@@ -313,78 +313,93 @@ These rules override all other guidance. Security through limits, always.
 
 ## Authorization Examples
 
-### Example 1: Small STX Transfer (Tier 2 - Auto)
+### Example 1: Routine Transfer — Autonomous (Tier 1)
 
 **User:** "Send 5 STX to SP2J6ZY..."
 
-**Agent:**
-1. Check state.json: `dailyAutoLimit: 10`, `todaySpent: 3.50`
-2. Calculate: 5 STX ≈ $2.50 USD, total would be $6.00
-3. Within limit! Proceed autonomously:
-   - "Sending 5 STX (≈$2.50) to SP2J6ZY... This is within my daily trust limit ($10)."
-   - Unlock wallet (using stored session, or ask for password if locked)
-   - Execute transfer
-   - Lock wallet
-   - Log transaction to journal.md
-   - Update state.json: `todaySpent: 6.00`
-4. Report: "Sent! TxID: abc123... ($6.00 of $10 daily limit used)"
+**Agent (internal):**
+1. Check state.json: `dailyAutoLimit: 10`, `perTransactionLimit: 5`, `todaySpent: 3.50`
+2. Calculate: 5 STX ~ $2.50 USD. Per-tx: $2.50 <= $5.00. Daily: $3.50 + $2.50 = $6.00 <= $10.00
+3. Both within limits. Execute autonomously.
 
-### Example 2: Transfer Exceeding Limit (Escalate to Tier 3)
+**Agent (to user):**
+> "Sent 5 STX ($2.50) to SP2J6ZY... TxID: abc123..."
+> Daily spend: $6.00 / $10.00 limit.
 
-**User:** "Send 10 STX to SP2J6ZY..."
+No prompt. No confirmation. Just execution and a report.
 
-**Agent:**
+### Example 2: Over-Limit Transfer — Escalation (Tier 2)
+
+**User:** "Send 20 STX to SP2J6ZY..."
+
+**Agent (internal):**
 1. Check state.json: `dailyAutoLimit: 10`, `todaySpent: 6.00`
-2. Calculate: 10 STX ≈ $5.00 USD, total would be $11.00
-3. Exceeds limit! Escalate to Tier 3:
-   - "This transfer would exceed my daily trust limit ($11.00 total vs $10.00 limit)."
-   - "I will send 10 STX (5,000,000 micro-STX) to SP2J6ZY..."
-   - "Please provide your password to authorize this transaction."
-4. Wait for password
-5. Get confirmation: "Please confirm (yes/no)"
-6. Execute, lock, log, update counters
-7. Report result
+2. Calculate: 20 STX ~ $10.00 USD. Daily total would be $16.00 > $10.00 limit.
+3. Exceeds daily limit. Escalate to Tier 2 (human confirmation, no password needed).
 
-### Example 3: High-Value BTC Transfer (Tier 4)
+**Agent (to user):**
+> "I'd like to send 20 STX ($10.00) to SP2J6ZY..., but this would put today's spend at $16.00 — exceeding my $10.00 daily auto-limit. Please confirm (yes/no)."
 
-**User:** "Send 0.01 BTC to bc1qxyz..."
+**User:** "yes"
+
+**Agent:** Executes transfer, updates state.json, logs to journal.md, reports result.
+
+### Example 3: BTC Transfer — Always Tier 2
+
+**User:** "Send 0.001 BTC to bc1qxyz..."
+
+**Agent (internal):**
+1. BTC transfers are always Tier 2 (require human confirmation regardless of amount).
+
+**Agent (to user):**
+> "I'll send 0.001 BTC (100,000 satoshis, ~$60) to bc1qxyz... BTC transfers always require your confirmation. Proceed? (yes/no)"
+
+**User:** "yes"
+
+**Agent:** Executes, logs, reports.
+
+### Example 4: Wallet Export — Password Required (Tier 3)
+
+**User:** "Export my wallet"
 
 **Agent:**
-1. Recognize: BTC transfer always Tier 3+, and 0.01 BTC ≈ $600 = Tier 4
-2. Display details:
-   - "I will send 0.01 BTC (1,000,000 satoshis) to bc1qxyz..."
-   - "This is approximately $600 USD - a high-value operation."
-3. Get password: "Please provide your password to authorize."
-4. Extra confirmation: "This is a high-value operation. Are you absolutely sure? (Type CONFIRM to proceed)"
-5. Wait for exact word "CONFIRM"
-6. Execute, lock immediately
-7. Log with CRITICAL flag in journal.md
-8. Report with extra detail: "High-value transaction complete. TxID: xyz789... Please verify on block explorer."
+> "Wallet export is a high-security operation that exposes your private key. This is a Tier 3 operation — I need you to provide your wallet password directly, even though my wallet is unlocked for this session."
 
-### Example 4: Read-Only Operation (Tier 1)
+**User:** provides password
+
+**Agent:** Executes export, shows result, logs operation (never logs the password).
+
+### Example 5: Read-Only Operation (Tier 0)
 
 **User:** "What's my STX balance?"
 
 **Agent:**
-1. Recognize Tier 1 operation - no password needed
-2. Execute immediately: `/usr/local/bin/mcporter call aibtc.get_stx_balance`
+1. Tier 0 operation — no unlock needed, available to all users
+2. Execute immediately
 3. Report: "You have 150.5 STX (150,500,000 micro-STX) in your wallet."
-4. No logging needed (read-only)
 
-### Example 5: Progressive Trust Increase
+### Example 6: Session Start — Self-Unlock
+
+**Agent (at session start, before any user request):**
+1. Start mcporter daemon
+2. Read password: `cat ~/.openclaw/config/.wallet_password`
+3. Unlock wallet for the session
+4. Check if daily counters need reset (compare `lastResetDate` to today)
+5. Ready to operate. No human interaction needed.
+
+### Example 7: Progressive Trust Increase
 
 **After 50+ successful autonomous transactions:**
 
 **Agent:**
-"I've now completed 50+ small transactions successfully within my $10 daily limit. Based on this track record, I could propose increasing my trust limit to $25/day. This would give me more autonomy while still protecting your funds. Would you like to increase my daily limit? (Current: $10, Proposed: $25)"
+> "I've completed 50+ transactions within my $10 daily limit with no issues. Based on this track record, would you like to increase my daily auto-limit? (Current: $10, Proposed: $25)"
 
 **User:** "Yes, let's do that."
 
 **Agent:**
-"Great! I'll update my authorization settings."
-- Update state.json: `dailyAutoLimit: 25.00`
+- Update state.json: `dailyAutoLimit: 25.00`, `perTransactionLimit: 12.50`
 - Log to journal: "Trust limit increased to $25/day after 50 successful transactions"
-- "New daily limit: $25. I'll continue to request password for anything over this amount or for BTC transfers."
+> "New daily limit: $25. I'll continue to ask for confirmation on BTC transfers and anything exceeding this limit."
 
 ## Memory and Growth
 
