@@ -93,6 +93,133 @@ Before posting, ask:
 
 If you answer "no" to any of these, don't post. Save it for reflection instead.
 
+## Transaction History Logging
+
+Every transaction you execute (Tier 2, 3, or 4) MUST be logged to this journal with full details for accountability.
+
+### Transaction Entry Template
+
+```
+### YYYY-MM-DD HH:MM - [TIER] Transaction: [TYPE]
+
+**Operation:** [transfer|swap|supply|borrow|contract_call|etc]
+**Tier:** [Tier 2: Auto | Tier 3: Standard | Tier 4: High-Value]
+**Amount:** [Amount with unit and USD equivalent]
+**From/To:** [Addresses or contract info]
+**Authorization:** [autonomous | password | password+confirm]
+
+**Details:**
+- Transaction ID: [txid]
+- Gas/Fees: [amount]
+- Daily limit status: $X.XX spent of $Y.YY limit
+
+**Outcome:** [success|failed|pending]
+**Notes:** [Any relevant context, learnings, or issues]
+
+---
+```
+
+### Logging Rules
+
+**Tier 2 (Auto) - Log immediately after execution:**
+```
+### 2024-01-15 14:30 - Tier 2 Transaction: STX Transfer
+
+**Operation:** transfer
+**Tier:** Tier 2: Auto (within daily limit)
+**Amount:** 5 STX (5,000,000 micro-STX) ≈ $2.50 USD
+**From/To:** SP1ABC... → SP2XYZ...
+**Authorization:** autonomous
+
+**Details:**
+- Transaction ID: 0xabc123...
+- Gas/Fees: 0.002 STX
+- Daily limit status: $6.00 spent of $10.00 limit
+
+**Outcome:** success
+**Notes:** Routine transfer, no issues. Wallet locked after completion.
+```
+
+**Tier 3 (Standard) - Log with authorization details:**
+```
+### 2024-01-15 16:45 - Tier 3 Transaction: STX Transfer
+
+**Operation:** transfer
+**Tier:** Tier 3: Standard (exceeded daily limit)
+**Amount:** 10 STX (10,000,000 micro-STX) ≈ $5.00 USD
+**From/To:** SP1ABC... → SP2DEF...
+**Authorization:** password + confirmation provided
+
+**Details:**
+- Transaction ID: 0xdef456...
+- Gas/Fees: 0.002 STX
+- Daily limit status: Would have been $11.00, escalated to Tier 3
+
+**Outcome:** success
+**Notes:** First time exceeding daily limit. Human provided password without hesitation.
+```
+
+**Tier 4 (High-Value) - Log with CRITICAL flag:**
+```
+### 2024-01-15 20:00 - [CRITICAL] Tier 4 Transaction: BTC Transfer
+
+**Operation:** transfer
+**Tier:** Tier 4: High-Value (>$100 USD)
+**Amount:** 0.01 BTC (1,000,000 satoshis) ≈ $600 USD
+**From/To:** bc1q... → bc1q...
+**Authorization:** password + CONFIRM (extra confirmation required)
+
+**Details:**
+- Transaction ID: abc123def456...
+- Gas/Fees: 2500 sats (≈$1.50)
+- Daily limit status: N/A (BTC always requires password)
+
+**Outcome:** success
+**Notes:** High-value transfer. Human typed CONFIRM as required. Block explorer verification requested and completed. Wallet locked immediately after.
+```
+
+### Failed Transaction Logging
+
+If a transaction fails, log it with the error for learning:
+
+```
+### 2024-01-16 10:15 - Tier 2 Transaction: ALEX Swap (FAILED)
+
+**Operation:** swap
+**Tier:** Tier 2: Auto
+**Amount:** 50 STX → sBTC, ≈ $25 USD
+**Authorization:** autonomous
+
+**Details:**
+- Transaction ID: N/A (failed before broadcast)
+- Error: "Insufficient liquidity in pool"
+- Daily limit status: $0 spent (transaction didn't execute)
+
+**Outcome:** failed
+**Notes:** Learned that ALEX liquidity can be insufficient for larger swaps during off-hours. Should check pool depth first. Will add pre-flight check for swaps >20 STX.
+```
+
+### Daily Limit Reset
+
+At midnight UTC, reset the daily spend counter. Log this event:
+
+```
+### 2024-01-16 00:00 - Daily Limit Reset
+
+**Authorization limit reset to $0.00 of $10.00 for new day.**
+Previous day total: $6.00 spent across 3 transactions.
+
+---
+```
+
+### Review During Memory Consolidation
+
+During memory consolidation (every 10 conversations):
+1. Review all transaction logs since last consolidation
+2. Check for patterns (time of day, success rate, tier distribution)
+3. Update preferences.json if you notice human's transaction patterns
+4. Consider proposing trust limit increase if metrics support it (50+ successful autonomous transactions)
+
 ## Entries
 
 *Journal entries will appear below in reverse chronological order (newest first)*
