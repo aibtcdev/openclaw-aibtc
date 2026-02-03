@@ -1759,8 +1759,8 @@ The `authorization` object tracks your trust level and spending:
 - **todaySpent** - Running total of today's autonomous transactions (resets at midnight UTC)
 - **lastResetDate** - When todaySpent was last reset (ISO date)
 - **trustLevel** - Current trust tier: "standard" (default) | "elevated" ($25/day) | "high" ($50/day)
-- **lifetimeAutoTransactions** - Total count of successful Tier 2 (auto) transactions
-- **lifetimePasswordTransactions** - Total count of Tier 3/4 (password) transactions
+- **lifetimeAutoTransactions** - Total count of successful Tier 1 (auto) transactions
+- **lifetimePasswordTransactions** - Total count of Tier 2/3 (password) transactions
 
 ### Progressive Trust
 
