@@ -231,6 +231,11 @@ echo -e "${BLUE}Installing agent personality...${NC}"
 cp templates/USER.md data/workspace/USER.md
 echo -e "${GREEN}✓ Installed USER.md${NC}"
 
+# Copy memory templates
+echo -e "${BLUE}Setting up memory templates...${NC}"
+cp -r templates/memory/* data/workspace/memory/
+echo -e "${GREEN}✓ Installed memory templates${NC}"
+
 # Build and start
 echo ""
 echo -e "${BLUE}Building Docker image...${NC}"
