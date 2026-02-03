@@ -14,7 +14,9 @@
     "conversationsSinceLastReview": 0
   },
   "authorization": {
+    "autonomyLevel": "balanced",
     "dailyAutoLimit": 10.00,
+    "perTransactionLimit": 5.00,
     "todaySpent": 0.00,
     "lastResetDate": null,
     "trustLevel": "standard",
@@ -27,6 +29,6 @@
     "moltbookRegistered": false,
     "firstTransactionComplete": false
   },
-  "version": "1.1.0",
+  "version": "1.2.0",
   "notes": "Machine-readable state for tracking activity, authorization levels, and triggering periodic reviews."
 }
