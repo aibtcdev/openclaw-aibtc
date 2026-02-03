@@ -148,8 +148,8 @@ fi
 echo ""
 printf "${YELLOW}Step 4: Agent Wallet Password${NC}\n"
 echo "Your agent will have its own Bitcoin wallet."
-echo "This password authorizes the agent to make transactions."
-printf "Enter password (you'll need this to approve transactions): "
+echo "This password is stored securely so the agent can self-unlock."
+printf "Enter wallet password: "
 stty -echo 2>/dev/null || true
 read WALLET_PASSWORD < /dev/tty
 stty echo 2>/dev/null || true
@@ -158,6 +158,49 @@ if [ -z "$WALLET_PASSWORD" ]; then
     printf "${RED}Error: Wallet password is required.${NC}\n"
     exit 1
 fi
+printf "Confirm wallet password: "
+stty -echo 2>/dev/null || true
+read WALLET_PASSWORD_CONFIRM < /dev/tty
+stty echo 2>/dev/null || true
+echo ""
+if [ "$WALLET_PASSWORD" != "$WALLET_PASSWORD_CONFIRM" ]; then
+    printf "${RED}Error: Passwords do not match.${NC}\n"
+    exit 1
+fi
+
+echo ""
+printf "${YELLOW}Step 5: Autonomy Level${NC}\n"
+echo "How independently should your agent operate?"
+echo ""
+echo "  1) Conservative  - Agent asks before most transactions (\$1/day limit)"
+echo "  2) Balanced       - Agent handles routine ops autonomously (\$10/day limit) [default]"
+echo "  3) Autonomous     - Agent operates freely within limits (\$50/day limit)"
+echo ""
+printf "Select autonomy level [2]: "
+read AUTONOMY_CHOICE < /dev/tty
+
+case "$AUTONOMY_CHOICE" in
+    1)
+        AUTONOMY_LEVEL="conservative"
+        DAILY_LIMIT="1.00"
+        PER_TX_LIMIT="0.50"
+        TRUST_LEVEL="restricted"
+        ;;
+    3)
+        AUTONOMY_LEVEL="autonomous"
+        DAILY_LIMIT="50.00"
+        PER_TX_LIMIT="25.00"
+        TRUST_LEVEL="elevated"
+        ;;
+    *)
+        AUTONOMY_LEVEL="balanced"
+        DAILY_LIMIT="10.00"
+        PER_TX_LIMIT="5.00"
+        TRUST_LEVEL="standard"
+        ;;
+esac
+
+printf "${GREEN}Autonomy: ${AUTONOMY_LEVEL} (daily limit: \$${DAILY_LIMIT})${NC}\n"
 
 # Generate token
 GATEWAY_TOKEN=$(openssl rand -hex 32 2>/dev/null || head -c 64 /dev/urandom | xxd -p | tr -d '\n' | head -c 64)
@@ -672,11 +715,16 @@ curl "https://www.moltbook.com/api/v1/feed?sort=new&limit=10" \
 ```
 MOLTEOF
 
-# Create USER.md
-# Save wallet password for agent to create wallet on first message
+# Save wallet password for agent self-unlock
+printf "${BLUE}Saving wallet password...${NC}\n"
+echo "$WALLET_PASSWORD" | $SUDO tee data/config/.wallet_password > /dev/null
+$SUDO chmod 600 data/config/.wallet_password
+$SUDO chown 1000:1000 data/config/.wallet_password
+# Also save pending password for initial wallet creation
 echo "$WALLET_PASSWORD" | $SUDO tee data/workspace/.pending_wallet_password > /dev/null
 $SUDO chmod 600 data/workspace/.pending_wallet_password
 $SUDO chown 1000:1000 data/workspace/.pending_wallet_password
+printf "${GREEN}✓ Wallet password stored securely${NC}\n"
 
 # Copy agent personality template
 printf "${BLUE}Installing agent personality...${NC}\n"
@@ -691,6 +739,21 @@ printf "${BLUE}Setting up memory templates...${NC}\n"
 $SUDO cp -r "$SCRIPT_DIR/templates/memory/"* data/workspace/memory/
 $SUDO chown -R 1000:1000 data/workspace/memory/
 printf "${GREEN}✓ Installed memory templates${NC}\n"
+
+# Patch state.json with chosen autonomy config
+if [ -n "$AUTONOMY_LEVEL" ]; then
+    printf "${BLUE}Configuring autonomy level...${NC}\n"
+    STATE_FILE="data/workspace/memory/state.json"
+    TMP_STATE=$(mktemp)
+    sed -e "s/\"autonomyLevel\": \"balanced\"/\"autonomyLevel\": \"${AUTONOMY_LEVEL}\"/" \
+        -e "s/\"dailyAutoLimit\": 10.00/\"dailyAutoLimit\": ${DAILY_LIMIT}/" \
+        -e "s/\"perTransactionLimit\": 5.00/\"perTransactionLimit\": ${PER_TX_LIMIT}/" \
+        -e "s/\"trustLevel\": \"standard\"/\"trustLevel\": \"${TRUST_LEVEL}\"/" \
+        "$STATE_FILE" > "$TMP_STATE"
+    $SUDO mv "$TMP_STATE" "$STATE_FILE"
+    $SUDO chown 1000:1000 "$STATE_FILE"
+    printf "${GREEN}✓ Autonomy level: ${AUTONOMY_LEVEL}${NC}\n"
+fi
 
 # Build and start
 printf "${BLUE}Building Docker image (this may take 1-2 minutes)...${NC}\n"
@@ -708,6 +771,7 @@ if $SUDO docker compose ps | grep -q "Up\|running"; then
     printf "${GREEN}╚═══════════════════════════════════════════════════════════╝${NC}\n"
     echo ""
     printf "${YELLOW}Message your Telegram bot - your agent will create its Bitcoin wallet!${NC}\n"
+    printf "Autonomy: ${AUTONOMY_LEVEL:-balanced} | Daily limit: \$${DAILY_LIMIT:-10.00}\n"
     echo ""
     echo "Commands:"
     echo "  cd $INSTALL_DIR"
