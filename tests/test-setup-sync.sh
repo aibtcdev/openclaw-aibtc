@@ -179,7 +179,7 @@ done
 section "4. Autonomy preset values"
 # ═══════════════════════════════════════════════════════════════════════════
 
-# Expected values per preset across all 3 setup scripts:
+# Expected values per preset across both setup scripts:
 #   conservative: daily=1.00, per-tx=0.50, trust=restricted
 #   balanced:     daily=10.00, per-tx=5.00, trust=standard
 #   autonomous:   daily=50.00, per-tx=25.00, trust=elevated
@@ -211,7 +211,7 @@ check_preset() {
   fi
 }
 
-for script in setup.sh local-setup.sh vps-setup.sh; do
+for script in local-setup.sh vps-setup.sh; do
   check_preset "$script" "conservative" "1.00" "0.50" "restricted"
   check_preset "$script" "balanced"     "10.00" "5.00" "standard"
   check_preset "$script" "autonomous"   "50.00" "25.00" "elevated"
