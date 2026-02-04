@@ -30,8 +30,8 @@ curl -sSL aibtc.com | sh
 git clone https://github.com/aibtcdev/openclaw-aibtc.git
 cd openclaw-aibtc
 
-# Run setup
-./setup.sh
+# Run setup (local machine / Docker Desktop)
+./local-setup.sh
 ```
 
 ## Deploy to VPS
