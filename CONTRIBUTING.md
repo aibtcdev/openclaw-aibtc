@@ -7,7 +7,7 @@ All checks below run in CI on every push and pull request to `main`. Run them lo
 ### ShellCheck (Shell Script Linting)
 
 ```bash
-shellcheck -S warning setup.sh local-setup.sh vps-setup.sh update-skill.sh
+shellcheck -S warning local-setup.sh vps-setup.sh update-skill.sh
 ```
 
 Install: `apt install shellcheck` or `brew install shellcheck`
