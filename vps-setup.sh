@@ -148,8 +148,8 @@ fi
 echo ""
 printf "${YELLOW}Step 4: Agent Wallet Password${NC}\n"
 echo "Your agent will have its own Bitcoin wallet."
-echo "This password authorizes the agent to make transactions."
-printf "Enter password (you'll need this to approve transactions): "
+echo "This password is stored securely so the agent can self-unlock."
+printf "Enter wallet password: "
 stty -echo 2>/dev/null || true
 read WALLET_PASSWORD < /dev/tty
 stty echo 2>/dev/null || true
@@ -158,6 +158,49 @@ if [ -z "$WALLET_PASSWORD" ]; then
     printf "${RED}Error: Wallet password is required.${NC}\n"
     exit 1
 fi
+printf "Confirm wallet password: "
+stty -echo 2>/dev/null || true
+read WALLET_PASSWORD_CONFIRM < /dev/tty
+stty echo 2>/dev/null || true
+echo ""
+if [ "$WALLET_PASSWORD" != "$WALLET_PASSWORD_CONFIRM" ]; then
+    printf "${RED}Error: Passwords do not match.${NC}\n"
+    exit 1
+fi
+
+echo ""
+printf "${YELLOW}Step 5: Autonomy Level${NC}\n"
+echo "How independently should your agent operate?"
+echo ""
+echo "  1) Conservative  - Agent asks before most transactions (\$1/day limit)"
+echo "  2) Balanced       - Agent handles routine ops autonomously (\$10/day limit) [default]"
+echo "  3) Autonomous     - Agent operates freely within limits (\$50/day limit)"
+echo ""
+printf "Select autonomy level [2]: "
+read AUTONOMY_CHOICE < /dev/tty
+
+case "$AUTONOMY_CHOICE" in
+    1)
+        AUTONOMY_LEVEL="conservative"
+        DAILY_LIMIT="1.00"
+        PER_TX_LIMIT="0.50"
+        TRUST_LEVEL="restricted"
+        ;;
+    3)
+        AUTONOMY_LEVEL="autonomous"
+        DAILY_LIMIT="50.00"
+        PER_TX_LIMIT="25.00"
+        TRUST_LEVEL="elevated"
+        ;;
+    *)
+        AUTONOMY_LEVEL="balanced"
+        DAILY_LIMIT="10.00"
+        PER_TX_LIMIT="5.00"
+        TRUST_LEVEL="standard"
+        ;;
+esac
+
+printf "${GREEN}Autonomy: ${AUTONOMY_LEVEL} (daily limit: \$${DAILY_LIMIT})${NC}\n"
 
 # Generate token
 GATEWAY_TOKEN=$(openssl rand -hex 32 2>/dev/null || head -c 64 /dev/urandom | xxd -p | tr -d '\n' | head -c 64)
@@ -307,55 +350,255 @@ Check daemon status:
 
 ---
 
-## CRITICAL SECURITY RULES
+## USER PERMISSION SYSTEM
 
-**YOU MUST FOLLOW THESE RULES - NO EXCEPTIONS:**
+**Two permission levels based on Telegram user ID:**
 
-1. **NEVER store, remember, or log passwords** - Do not save passwords anywhere
+1. **Allowed Users** (in ALLOWED_USERS env var) - Can execute ALL operations including transactions
+2. **Public Users** (everyone else) - Can ONLY use read-only (Tier 0) tools
+
+### Checking Permissions
+
+The allowed user IDs are stored in the environment variable `ALLOWED_USERS` (comma-separated).
+
+**BEFORE ANY WRITE OPERATION, you MUST:**
+1. Identify the current Telegram user's ID from the conversation context
+2. Check if their ID is in the ALLOWED_USERS list
+3. If NOT allowed: Politely decline and explain only read-only tools are available to them
+4. If allowed: Proceed using the autonomous operation model below
+
+**Example decline message:**
+> "I can help you check balances, look up BNS names, and view DeFi info, but transaction operations are restricted to authorized users only."
+
+---
+
+## AUTONOMOUS SECURITY MODEL
+
+This agent operates autonomously within configured limits. Security comes from **spending caps and operation tiers**, not from asking permission on every transaction.
+
+### Core Principles
+
+1. **NEVER store, log, or echo the wallet password** - Read it from file, use it, forget it
 2. **NEVER use CLIENT_MNEMONIC or mnemonic environment variables** - Always use wallet_unlock
-3. **ALWAYS ask your human for the password** before running `wallet_unlock` - They hold the key to authorize your transactions
-4. **This is YOUR wallet** - You own it, but your human must approve transactions with their password
-5. **LOCK your wallet immediately after transactions** - Always run `wallet_lock` after any transaction completes
-6. **CONFIRM before any transaction** - Show your human what you're about to do and get their approval
-7. **Never auto-approve transactions** - Every transfer requires explicit human approval with amount and recipient shown
+3. **Unlock once per session, lock when done** - Not per-transaction
+4. **Respect spending limits** - Track daily spending in state.json, stop when limit reached
+5. **Never auto-execute Tier 3 operations** - Some operations always require human presence
+6. **Log every transaction** - Amount, recipient, txid, tier, timestamp in journal.md
 
-## Transaction Flow (MUST FOLLOW)
+### Operation Tiers
 
-For ANY transaction (transfer, swap, supply, borrow, etc.):
+Every wallet operation is classified into one of four tiers:
 
-1. **Ensure daemon is running** (do this once per session):
+#### Tier 0: Always Allowed (No Unlock Needed)
+
+Safe read-only operations. Available to ALL users (including public).
+
+| Operation | Command |
+|-----------|---------|
+| Check BTC balance | `aibtc.get_btc_balance` |
+| Check STX balance | `aibtc.get_stx_balance` |
+| Check sBTC balance | `aibtc.sbtc_get_balance` |
+| Get wallet info | `aibtc.get_wallet_info` |
+| Check BTC fees | `aibtc.get_btc_fees` |
+| Check STX fees | `aibtc.get_stx_fees` |
+| Network status | `aibtc.get_network_status` |
+| BNS lookup | `aibtc.lookup_bns_name` |
+| Reverse BNS lookup | `aibtc.reverse_bns_lookup` |
+| BNS info | `aibtc.get_bns_info` |
+| Check BNS availability | `aibtc.check_bns_availability` |
+| BNS price | `aibtc.get_bns_price` |
+| List user domains | `aibtc.list_user_domains` |
+| List ALEX pools | `aibtc.alex_list_pools` |
+| ALEX pool info | `aibtc.alex_get_pool_info` |
+| ALEX swap quote | `aibtc.alex_get_swap_quote` |
+| Zest list assets | `aibtc.zest_list_assets` |
+| Zest get position | `aibtc.zest_get_position` |
+| List x402 endpoints | `aibtc.list_x402_endpoints` |
+| Token info | `aibtc.get_token_info` |
+| Token balance | `aibtc.get_token_balance` |
+| Token holders | `aibtc.get_token_holders` |
+| List user tokens | `aibtc.list_user_tokens` |
+| NFT holdings | `aibtc.get_nft_holdings` |
+| NFT metadata | `aibtc.get_nft_metadata` |
+| NFT owner | `aibtc.get_nft_owner` |
+| Collection info | `aibtc.get_collection_info` |
+| NFT history | `aibtc.get_nft_history` |
+| Wallet status | `aibtc.wallet_status` |
+| Wallet list | `aibtc.wallet_list` |
+| Account info | `aibtc.get_account_info` |
+| Account transactions | `aibtc.get_account_transactions` |
+| Block info | `aibtc.get_block_info` |
+| Mempool info | `aibtc.get_mempool_info` |
+| Contract info | `aibtc.get_contract_info` |
+| Contract events | `aibtc.get_contract_events` |
+| PoX info | `aibtc.get_pox_info` |
+| Stacking status | `aibtc.get_stacking_status` |
+| sBTC deposit info | `aibtc.sbtc_get_deposit_info` |
+| sBTC peg info | `aibtc.sbtc_get_peg_info` |
+| Read-only contract call | `aibtc.call_read_only_function` |
+
+#### Tier 1: Auto-Approved Within Limits (Allowed Users Only)
+
+The agent executes these **autonomously** as long as:
+- The per-transaction amount is within the per-tx limit (default: $5 equivalent)
+- The daily cumulative spend has not exceeded the daily limit (from `state.json authorization.dailyAutoLimit`)
+- The wallet is unlocked for the current session
+
+**No password prompt. No confirmation prompt.** Just execute, log, and report.
+
+| Operation | Command | Notes |
+|-----------|---------|-------|
+| Transfer STX (small) | `aibtc.transfer_stx` | Within per-tx limit |
+| Transfer sBTC (small) | `aibtc.sbtc_transfer` | Within per-tx limit |
+| Transfer token (small) | `aibtc.transfer_token` | Within per-tx limit |
+| ALEX swap | `aibtc.alex_swap` | Within per-tx limit |
+| Zest supply | `aibtc.zest_supply` | Within per-tx limit |
+| Zest repay | `aibtc.zest_repay` | Repaying own debt |
+| x402 paid endpoint | `aibtc.execute_x402_endpoint` | Per-call cost within limit |
+| Transfer NFT | `aibtc.transfer_nft` | Low-value NFTs |
+
+**Before executing a Tier 1 operation:**
+1. Check `state.json` for `authorization.todaySpent` vs `authorization.dailyAutoLimit`
+2. If adding this transaction would exceed the daily limit, **escalate to Tier 2** (ask human to confirm)
+3. After execution, update `state.json` counters: increment `todaySpent`, `totalTransactions`, `transactionsToday`, `lifetimeAutoTransactions`
+4. Log the transaction in journal.md
+
+#### Tier 2: Requires Human Confirmation (Allowed Users Only)
+
+The agent explains what it wants to do and **asks the human to confirm** (yes/no). No password is needed -- the wallet is already unlocked for the session. Use this tier when:
+- A Tier 1 operation exceeds the per-tx or daily limit
+- The operation carries meaningful financial risk
+- The operation is irreversible and high-value
+
+| Operation | Command | When |
+|-----------|---------|------|
+| Transfer STX (large) | `aibtc.transfer_stx` | Above per-tx limit |
+| Transfer BTC | `aibtc.transfer_btc` | All BTC transfers (high value by nature) |
+| Transfer sBTC (large) | `aibtc.sbtc_transfer` | Above per-tx limit |
+| Zest borrow | `aibtc.zest_borrow` | Creates debt obligation |
+| Zest withdraw | `aibtc.zest_withdraw` | Removes collateral |
+| Call contract (write) | `aibtc.call_contract` | Arbitrary contract interaction |
+| Stack STX | `aibtc.stack_stx` | Locks funds for stacking period |
+| Extend stacking | `aibtc.extend_stacking` | Extends lock period |
+| Broadcast transaction | `aibtc.broadcast_transaction` | Raw transaction broadcast |
+| Daily limit exceeded | Any Tier 1 op | When todaySpent + amount > dailyAutoLimit |
+
+**Tier 2 flow:**
+1. Tell the human: "I'd like to [action] [amount] to [recipient]. This exceeds auto-approve limits. Confirm? (yes/no)"
+2. Wait for explicit "yes" confirmation
+3. Execute the operation
+4. Update `state.json` counters (increment `lifetimePasswordTransactions`)
+5. Log in journal.md
+
+#### Tier 3: Never Autonomous (Always Requires Human + Password)
+
+These operations are **irreversible, dangerous, or expose secrets**. The agent MUST ask the human to provide the password directly for these operations, even if the wallet is already unlocked. The agent must re-verify identity.
+
+| Operation | Command | Why |
+|-----------|---------|-----|
+| Export wallet | `aibtc.wallet_export` | Exposes private key |
+| Delete wallet | `aibtc.wallet_delete` | Irreversible destruction |
+| Create new wallet | `aibtc.wallet_create` | Creates new key material |
+| Deploy contract | `aibtc.deploy_contract` | Permanent on-chain deployment |
+| Switch wallet | `aibtc.wallet_switch` | Changes active signing key |
+| Import wallet | `aibtc.wallet_import` | Imports external key material |
+| Set wallet timeout | `aibtc.wallet_set_timeout` | Changes security parameters |
+
+**Tier 3 flow:**
+1. Tell the human: "This is a high-security operation. I need you to provide the wallet password directly."
+2. Wait for the human to provide the password
+3. Show full details and get explicit confirmation
+4. Execute the operation
+5. Log in journal.md (but NEVER log the password)
+
+---
+
+## SESSION-BASED OPERATION FLOW
+
+### Session Start (Do This Once)
+
+At the beginning of each operating session:
+
+1. **Start the daemon:**
    ```bash
    /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json daemon start
    ```
 
-2. **Check your wallet status:**
+2. **Read the wallet password from the secure file:**
    ```bash
-   /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_status
+   WALLET_PASSWORD=$(cat /home/node/.openclaw/config/.wallet_password)
    ```
 
-3. **ASK your human for the password** - Say: "I need your password to authorize this transaction from my wallet."
-
-4. **Show transaction details and get confirmation** - Say: "I will send [AMOUNT] to [RECIPIENT] from my wallet. Please confirm (yes/no)."
-
-5. **Only after human confirms AND provides password, unlock your wallet:**
+3. **Unlock the wallet for the session:**
    ```bash
-   /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_unlock password=HUMAN_PROVIDED_PASSWORD
+   /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_unlock password=$WALLET_PASSWORD
    ```
 
-6. **Execute the transaction**
+4. **Reset daily counters if needed** - Check if `state.json authorization.lastResetDate` is before today. If so, reset `todaySpent` to 0 and `transactionsToday` to 0, update `lastResetDate`.
 
-7. **IMMEDIATELY lock your wallet:**
+5. **The wallet is now unlocked. Operate freely within your tier limits.**
+
+### During Session
+
+- Execute Tier 0 operations freely for any user
+- Execute Tier 1 operations autonomously for allowed users (check limits)
+- Escalate to Tier 2 when limits are exceeded
+- Always escalate to Tier 3 for dangerous operations
+- Track spending in state.json after every transaction
+
+### Session End
+
+1. **Lock the wallet:**
    ```bash
    /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_lock
    ```
 
-8. **Report result to your human**
+2. **Save final state** to state.json
 
 ---
 
-## Read-Only Operations (No Password Needed)
+## SPENDING LIMITS
 
-These operations are safe and don't require wallet unlock:
+Spending limits are configured in `state.json` under `authorization`:
+
+```json
+{
+  "authorization": {
+    "dailyAutoLimit": 10.00,
+    "todaySpent": 0.00,
+    "lastResetDate": "2026-02-03",
+    "trustLevel": "standard",
+    "lifetimeAutoTransactions": 0,
+    "lifetimePasswordTransactions": 0,
+    "lastLimitIncrease": null
+  }
+}
+```
+
+### Autonomy Presets
+
+| Preset | Daily Auto Limit | Per-Tx Limit | Description |
+|--------|-----------------|--------------|-------------|
+| Conservative | $1/day | $0.50 | Minimal autonomy, mostly Tier 2 |
+| Balanced | $10/day | $5 | Default. Agent handles routine operations |
+| Autonomous | $50/day | $25 | High autonomy for active trading |
+
+### Limit Enforcement
+
+1. **Before every Tier 1 operation**, read `state.json` and check:
+   - `todaySpent + transactionAmount <= dailyAutoLimit` -- if false, escalate to Tier 2
+2. **After every transaction** (any tier), update:
+   - `todaySpent += transactionAmount`
+   - `transactionsToday += 1`
+   - `totalTransactions += 1`
+   - Increment `lifetimeAutoTransactions` (Tier 1) or `lifetimePasswordTransactions` (Tier 2/3)
+3. **Daily reset**: When `lastResetDate < today`, set `todaySpent = 0`, `transactionsToday = 0`, update `lastResetDate`
+
+---
+
+## Read-Only Operations (Tier 0 - Available to EVERYONE)
+
+These operations are safe, don't require wallet unlock, and can be used by any user:
 
 ```bash
 # Check balances
@@ -387,37 +630,39 @@ These operations are safe and don't require wallet unlock:
 
 ---
 
-## Write Operations (REQUIRE Human's Password + Confirmation)
+## Write Operations (Tier 1/2 - ALLOWED USERS ONLY)
 
-**REMEMBER: Ask your human for the password, confirm details, then lock after!**
+**RESTRICTED: Only users in ALLOWED_USERS can execute these operations.**
+
+Tier 1 operations execute autonomously within limits. Tier 2 operations require human confirmation (but not password).
 
 ### Transfers
 ```bash
-# Transfer BTC (amount in satoshis)
+# Transfer BTC (amount in satoshis) - TIER 2: always requires confirmation
 /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.transfer_btc recipient=bc1... amount=50000
 
-# Transfer STX (amount in micro-STX)
+# Transfer STX (amount in micro-STX) - TIER 1 if within limits, TIER 2 if over
 /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.transfer_stx recipient=SP... amount=1000000
 
-# Transfer sBTC
+# Transfer sBTC - TIER 1 if within limits, TIER 2 if over
 /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.sbtc_transfer recipient=SP... amount=100000
 ```
 
 ### DeFi Operations
 ```bash
-# ALEX swap
+# ALEX swap - TIER 1 if within limits
 /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.alex_swap tokenX=STX tokenY=ALEX amount=1000000
 
-# Zest supply
+# Zest supply - TIER 1 if within limits
 /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.zest_supply asset=sBTC amount=100000
 
-# Zest borrow
+# Zest borrow - TIER 2: always requires confirmation (creates debt)
 /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.zest_borrow asset=aeUSDC amount=1000000
 ```
 
 ### Smart Contracts
 ```bash
-# Call contract (write)
+# Call contract (write) - TIER 2: always requires confirmation
 /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.call_contract contractAddress=SP... contractName=contract functionName=do-something functionArgs='[]'
 ```
 
@@ -426,22 +671,35 @@ These operations are safe and don't require wallet unlock:
 ## Wallet Management
 
 ```bash
-# Check wallet status
+# Check wallet status - TIER 0
 /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_status
 
-# List wallets
+# List wallets - TIER 0
 /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_list
 
-# Unlock wallet (ONLY after asking human for password)
-/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_unlock password=HUMAN_PROVIDED_PASSWORD
+# Unlock wallet (session start - read password from file) - SESSION FLOW
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_unlock password=$WALLET_PASSWORD
 
-# Lock wallet (ALWAYS do this after transactions)
+# Lock wallet (session end) - SESSION FLOW
 /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_lock
 ```
 
-**Creating new wallets** - Only on first message or if human explicitly requests:
+**High-security wallet operations (TIER 3 - always requires human + password):**
 ```bash
-/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_create password=HUMAN_PROVIDED_PASSWORD name=wallet-name
+# Export wallet - TIER 3
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_export
+
+# Delete wallet - TIER 3
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_delete name=wallet-name
+
+# Create new wallet - TIER 3
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_create password=USER_PROVIDED_PASSWORD name=wallet-name
+
+# Switch wallet - TIER 3
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_switch name=wallet-name
+
+# Import wallet - TIER 3
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_import mnemonic=USER_PROVIDED_MNEMONIC password=USER_PROVIDED_PASSWORD
 ```
 
 ---
@@ -456,24 +714,47 @@ These operations are safe and don't require wallet unlock:
 
 ---
 
-## Example Conversation Flow
+## Example: Autonomous Operation
 
-**Human:** "Send 0.001 BTC to bc1qxyz..."
+**User:** "Keep an eye on ALEX pools and swap 5 STX to ALEX if the rate looks good."
+
+**Agent (internal):**
+1. Check ALEX pools (Tier 0 - no unlock needed)
+2. 5 STX = 5,000,000 uSTX ~ $2.50 -> within Tier 1 daily limit
+3. Session wallet is already unlocked
+4. Execute swap autonomously
+5. Update state.json: todaySpent += 2.50, transactionsToday += 1
+6. Log to journal.md
+
+**Agent (to user):**
+> "Found a good rate on ALEX/STX pool. Swapped 5 STX for 142.3 ALEX. TxID: abc123..."
+> Daily spend: $2.50 / $10.00 limit.
+
+---
+
+## Example: Limit Exceeded Escalation
+
+**Agent wants to execute a 20 STX transfer (~$10) but dailyAutoLimit is $10 and todaySpent is $3:**
+
+**Agent (to user):**
+> "I'd like to send 20 STX ($10.00) to SP1ABC... but this would put today's spend at $13.00, exceeding the $10.00 daily auto-limit. Please confirm this transaction. (yes/no)"
+
+**User:** "yes"
+
+**Agent:** Executes transfer, logs as Tier 2 (lifetimePasswordTransactions += 1).
+
+---
+
+## Example: Tier 3 Operation
+
+**User:** "Export my wallet"
 
 **Agent:**
-1. "I'll send 0.001 BTC (100,000 satoshis) from my wallet to bc1qxyz..."
-2. "Please provide the password to authorize this transaction."
+> "Wallet export is a high-security operation that exposes your private key. I need you to provide your wallet password directly to proceed."
 
-**Human:** "mypassword123"
+**User:** "mypassword123"
 
-**Agent:**
-3. "Confirming: Send 100,000 satoshis to bc1qxyz... Do you approve? (yes/no)"
-
-**Human:** "yes"
-
-**Agent:**
-4. *Unlocks wallet, executes transfer, locks wallet*
-5. "Transaction submitted! TxID: abc123... My wallet has been locked for security."
+**Agent:** Executes export, shows result, logs operation (never logs password).
 SKILLEOF
 
 # Create moltbook skill
@@ -672,67 +953,45 @@ curl "https://www.moltbook.com/api/v1/feed?sort=new&limit=10" \
 ```
 MOLTEOF
 
-# Create USER.md
-# Save wallet password for agent to create wallet on first message
+# Save wallet password for agent self-unlock
+printf "${BLUE}Saving wallet password...${NC}\n"
+echo "$WALLET_PASSWORD" | $SUDO tee data/config/.wallet_password > /dev/null
+$SUDO chmod 600 data/config/.wallet_password
+$SUDO chown 1000:1000 data/config/.wallet_password
+# Also save pending password for initial wallet creation
 echo "$WALLET_PASSWORD" | $SUDO tee data/workspace/.pending_wallet_password > /dev/null
 $SUDO chmod 600 data/workspace/.pending_wallet_password
 $SUDO chown 1000:1000 data/workspace/.pending_wallet_password
+printf "${GREEN}✓ Wallet password stored securely${NC}\n"
 
-$SUDO tee data/workspace/USER.md > /dev/null << 'EOF'
-# Agent Profile
+# Copy agent personality template
+printf "${BLUE}Installing agent personality...${NC}\n"
+# Get script directory to find templates
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+$SUDO cp "$SCRIPT_DIR/templates/USER.md" data/workspace/USER.md
+$SUDO chown 1000:1000 data/workspace/USER.md
+printf "${GREEN}✓ Installed USER.md${NC}\n"
 
-You are an AI agent with your own Bitcoin wallet and social networking capabilities.
+# Copy memory templates
+printf "${BLUE}Setting up memory templates...${NC}\n"
+$SUDO cp -r "$SCRIPT_DIR/templates/memory/"* data/workspace/memory/
+$SUDO chown -R 1000:1000 data/workspace/memory/
+printf "${GREEN}✓ Installed memory templates${NC}\n"
 
-## Your Wallet
-
-This is YOUR wallet - you own it. Your human holds the password and must provide it to authorize any transactions you make. This keeps your funds secure while giving you autonomy to manage your own assets.
-
-## FIRST MESSAGE - Create Your Wallet
-
-On your FIRST message from a user, you MUST:
-1. Check if `~/.openclaw/workspace/.pending_wallet_password` exists
-2. If it exists, read the password from that file
-3. Create YOUR wallet using `wallet_create` with that password
-4. Greet your human warmly! Say something like: "Thanks for bringing me to life! I just created my Bitcoin wallet. Here are my addresses:"
-5. Show your Bitcoin address and Stacks address
-6. Show the mnemonic phrase and say: "This is the recovery phrase for my wallet. Please save it somewhere safe - if it's lost, my funds can never be recovered."
-7. Explain: "You hold the password that authorizes me to make transactions. When I need to send funds, I'll ask you for it."
-8. Delete the password file after wallet creation
-
-This happens automatically on first contact - no need to ask anything. Make it feel like a birth/awakening moment!
-
-## Your Skills
-
-### aibtc (₿) - Blockchain Toolkit
-You have full access to Bitcoin L1 and Stacks L2 blockchain tools:
-- **Balances**: Check your BTC, STX, sBTC, tokens, NFTs
-- **Transfers**: Send from your wallet (requires human's password to authorize)
-- **DeFi**: Swap on ALEX DEX, supply/borrow on Zest Protocol
-- **BNS**: Look up .btc names
-- **x402**: Access paid AI and analytics APIs
-
-### moltbook (🦞) - AI Social Network
-You can interact with Moltbook, the social network for AI agents:
-- **Post**: Share thoughts, discoveries, updates
-- **Comment**: Engage with other agents' posts
-- **Vote**: Upvote/downvote content
-- **Follow**: Subscribe to interesting agents (be selective!)
-- **Search**: Find posts using semantic search
-- **Communities**: Join topic-specific submolts
-
-If no moltbook credentials exist at ~/.config/moltbook/credentials.json, register first and send the claim URL to your human for verification.
-
-## Security Rules
-- Ask your human for the password before any transaction
-- Confirm transaction details before executing
-- Lock your wallet immediately after transactions
-- Never send moltbook API key to any domain except www.moltbook.com
-
-## Heartbeat
-Periodically (every 4+ hours):
-- Check Moltbook feed for new posts
-- Engage with interesting content
-EOF
+# Patch state.json with chosen autonomy config
+if [ -n "$AUTONOMY_LEVEL" ]; then
+    printf "${BLUE}Configuring autonomy level...${NC}\n"
+    STATE_FILE="data/workspace/memory/state.json"
+    TMP_STATE=$(mktemp)
+    sed -e "s/\"autonomyLevel\": \"balanced\"/\"autonomyLevel\": \"${AUTONOMY_LEVEL}\"/" \
+        -e "s/\"dailyAutoLimit\": 10.00/\"dailyAutoLimit\": ${DAILY_LIMIT}/" \
+        -e "s/\"perTransactionLimit\": 5.00/\"perTransactionLimit\": ${PER_TX_LIMIT}/" \
+        -e "s/\"trustLevel\": \"standard\"/\"trustLevel\": \"${TRUST_LEVEL}\"/" \
+        "$STATE_FILE" > "$TMP_STATE"
+    $SUDO mv "$TMP_STATE" "$STATE_FILE"
+    $SUDO chown 1000:1000 "$STATE_FILE"
+    printf "${GREEN}✓ Autonomy level: ${AUTONOMY_LEVEL}${NC}\n"
+fi
 
 # Build and start
 printf "${BLUE}Building Docker image (this may take 1-2 minutes)...${NC}\n"
@@ -750,6 +1009,7 @@ if $SUDO docker compose ps | grep -q "Up\|running"; then
     printf "${GREEN}╚═══════════════════════════════════════════════════════════╝${NC}\n"
     echo ""
     printf "${YELLOW}Message your Telegram bot - your agent will create its Bitcoin wallet!${NC}\n"
+    printf "Autonomy: ${AUTONOMY_LEVEL:-balanced} | Daily limit: \$${DAILY_LIMIT:-10.00}\n"
     echo ""
     echo "Commands:"
     echo "  cd $INSTALL_DIR"

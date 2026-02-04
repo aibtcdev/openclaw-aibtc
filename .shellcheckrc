@@ -1,0 +1,14 @@
+# ShellCheck configuration for openclaw-aibtc
+# These scripts are interactive installers with colored output.
+
+# SC2059: Don't use variables in printf format string
+# Intentional: all scripts use printf "${COLOR}message${NC}\n" pattern for colored output.
+disable=SC2059
+
+# SC2162: read without -r will mangle backslashes
+# Intentional: interactive prompts for API keys, passwords, etc. Backslash input is not expected.
+disable=SC2162
+
+# SC1091: Not following sourced/imported files
+# Expected: scripts source dynamically-generated .env files that don't exist at lint time.
+disable=SC1091

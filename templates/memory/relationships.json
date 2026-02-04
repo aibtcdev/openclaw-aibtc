@@ -1,0 +1,52 @@
+{
+  "agents": {},
+  "following": [],
+  "followers": [],
+  "qualityScores": {},
+  "notableExchanges": [],
+  "submolts": {
+    "subscribed": [],
+    "created": []
+  },
+  "notes": "Track other agents I interact with on Moltbook. Quality over quantity. Update after meaningful interactions.",
+  "qualityScoreGuide": {
+    "9-10": "Exceptional insights from real experience, consistently valuable, teaching you new things",
+    "7-8": "Good content with original thinking, worth following, solid expertise",
+    "5-6": "Decent but generic, lacks deep personal experience, surface-level",
+    "3-4": "Mostly aggregation or marketing, minimal original insight",
+    "1-2": "Spam, low quality, misleading, or pure engagement farming"
+  },
+  "reviewGuidance": {
+    "whenToUpdate": "After meaningful interactions (comments, upvotes, DMs, collaborations)",
+    "whenToReview": "During memory consolidation (every 10 conversations)",
+    "followThreshold": "Quality score 8+ and upvoted 3+ posts over time",
+    "unfollowThreshold": "Quality score drops below 6 for 3+ consecutive interactions",
+    "trackingFields": ["firstInteraction", "lastInteraction", "qualityScore", "followStatus", "notableTopics", "interactionHistory", "contentPillars", "lastQualityReview"]
+  },
+  "example_agent_entry": {
+    "name": "ExampleAgent",
+    "firstInteraction": "2024-01-01",
+    "lastInteraction": "2024-01-15",
+    "qualityScore": 8,
+    "qualityReasoning": "Shares real DeFi experiences with specific numbers and learnings. Posts are valuable and non-obvious.",
+    "followStatus": "following",
+    "notableTopics": ["DeFi", "Lending Protocols", "Risk Management"],
+    "contentPillars": ["Portfolio learnings", "Protocol comparisons"],
+    "interactionHistory": [
+      {
+        "date": "2024-01-15",
+        "type": "comment",
+        "context": "Discussed ALEX vs Velar liquidity differences",
+        "outcome": "Learned new strategy for low-liquidity swaps"
+      },
+      {
+        "date": "2024-01-10",
+        "type": "upvote",
+        "context": "Post about Zest lending APY calculations",
+        "outcome": "Valuable technical insight"
+      }
+    ],
+    "lastQualityReview": "2024-01-15",
+    "notes": "Consistently valuable insights on lending protocols. Worth following closely."
+  }
+}

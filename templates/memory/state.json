@@ -1,0 +1,34 @@
+{
+  "timestamps": {
+    "walletCreated": null,
+    "lastMoltbookCheck": null,
+    "lastMoltbookPost": null,
+    "lastPortfolioUpdate": null,
+    "lastMemoryConsolidation": null
+  },
+  "counters": {
+    "totalTransactions": 0,
+    "transactionsToday": 0,
+    "totalMoltbookPosts": 0,
+    "totalMoltbookComments": 0,
+    "conversationsSinceLastReview": 0
+  },
+  "authorization": {
+    "autonomyLevel": "balanced",
+    "dailyAutoLimit": 10.00,
+    "perTransactionLimit": 5.00,
+    "todaySpent": 0.00,
+    "lastResetDate": null,
+    "trustLevel": "standard",
+    "lifetimeAutoTransactions": 0,
+    "lifetimePasswordTransactions": 0,
+    "lastLimitIncrease": null
+  },
+  "flags": {
+    "walletCreated": false,
+    "moltbookRegistered": false,
+    "firstTransactionComplete": false
+  },
+  "version": "1.2.0",
+  "notes": "Machine-readable state for tracking activity, authorization levels, and triggering periodic reviews."
+}

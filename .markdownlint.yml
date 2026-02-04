@@ -1,0 +1,71 @@
+# markdownlint configuration for openclaw-aibtc
+# These markdown files are AI agent instruction surfaces.
+# Rules are liberally disabled to avoid false positives on
+# YAML frontmatter, long command lines, tables, and heredocs.
+
+# MD003 - Heading style: consistent ATX style
+MD003:
+  style: "atx"
+
+# MD010 - Hard tabs: disabled (may appear in code examples)
+MD010: false
+
+# MD012 - Multiple consecutive blank lines
+MD012:
+  maximum: 2
+
+# MD013 - Line length: disabled (tables, URLs, code blocks, heredocs)
+MD013: false
+
+# MD022 - Blanks around headings: disabled (compact formatting in instruction files)
+MD022: false
+
+# MD024 - Multiple headings with same content: disabled (intentional duplication)
+MD024: false
+
+# MD025 - Single top-level heading: disabled (YAML frontmatter + multiple sections)
+MD025: false
+
+# MD026 - Trailing punctuation in heading: disabled
+MD026: false
+
+# MD028 - Blank line inside blockquote: disabled
+MD028: false
+
+# MD029 - Ordered list item prefix: allow any style
+MD029:
+  style: "one_or_ordered"
+
+# MD031 - Blanks around fenced code blocks: disabled (compact instruction format)
+MD031: false
+
+# MD032 - Blanks around lists: disabled (compact instruction format)
+MD032: false
+
+# MD033 - Inline HTML: disabled (may appear in docs)
+MD033: false
+
+# MD034 - Bare URLs: disabled (common in agent instructions)
+MD034: false
+
+# MD036 - Emphasis used instead of a heading: disabled
+MD036: false
+
+# MD040 - Fenced code blocks should have a language specified: disabled
+MD040: false
+
+# MD041 - First line in file should be a top-level heading: disabled (YAML frontmatter)
+MD041: false
+
+# MD044 - Proper names should have correct capitalization: disabled
+MD044: false
+
+# MD046 - Code block style: allow both fenced and indented
+MD046:
+  style: "consistent"
+
+# MD056 - Table column count: disabled (may have intentional variations)
+MD056: false
+
+# MD060 - Table column style: disabled (compact table formatting is intentional)
+MD060: false

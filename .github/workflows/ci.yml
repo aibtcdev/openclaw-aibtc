@@ -1,0 +1,179 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Run ShellCheck
+        run: shellcheck -S warning setup.sh local-setup.sh vps-setup.sh update-skill.sh
+
+  hadolint:
+    name: Hadolint Dockerfile Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+
+  docker-compose-validate:
+    name: Docker Compose Config Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create dummy .env for validation
+        run: cp .env.example .env
+
+      - name: Validate docker-compose.yml
+        run: docker compose config --quiet
+
+  json-validate:
+    name: JSON Template Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate memory template JSON files
+        run: |
+          status=0
+          for f in templates/memory/*.json; do
+            if ! python3 -c "import json, sys; json.load(open(sys.argv[1]))" "$f"; then
+              echo "FAIL: $f is not valid JSON"
+              status=1
+            else
+              echo "OK: $f"
+            fi
+          done
+          exit $status
+
+  env-var-coverage:
+    name: Env Var Coverage Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check env var coverage
+        run: |
+          # Extract ${VAR} and ${VAR:-default} references from docker-compose.yml
+          compose_vars=$(grep -oP '\$\{(\w+)' docker-compose.yml | sed 's/\${//' | sort -u)
+
+          # Extract VAR= definitions from .env.example
+          env_vars=$(grep -oP '^\w+(?==)' .env.example | sort -u)
+
+          missing=0
+          for var in $compose_vars; do
+            if ! echo "$env_vars" | grep -qx "$var"; then
+              echo "MISSING: $var is referenced in docker-compose.yml but not defined in .env.example"
+              missing=1
+            else
+              echo "OK: $var"
+            fi
+          done
+
+          if [ "$missing" -eq 1 ]; then
+            echo ""
+            echo "Error: Some env vars in docker-compose.yml are not documented in .env.example"
+            exit 1
+          fi
+          echo ""
+          echo "All env vars in docker-compose.yml are documented in .env.example"
+
+  markdown-lint:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run markdownlint-cli2
+        run: npx markdownlint-cli2 "**/*.md" "#node_modules"
+
+  integration-tests:
+    name: Setup Script Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run heredoc sync and autonomy preset tests
+        run: bash tests/test-setup-sync.sh
+
+  yaml-frontmatter:
+    name: SKILL.md YAML Frontmatter Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate YAML frontmatter in SKILL.md files
+        run: |
+          python3 << 'PYEOF'
+          import yaml, glob, sys
+
+          required_fields = ["name", "description"]
+          status = 0
+
+          for path in sorted(glob.glob("skills/*/SKILL.md")):
+              print(f"Checking: {path}")
+              with open(path) as f:
+                  content = f.read()
+
+              if not content.startswith("---\n"):
+                  print(f"  FAIL: {path} has no YAML frontmatter")
+                  status = 1
+                  continue
+
+              try:
+                  end = content.index("\n---", 3)
+                  fm_text = content[4:end]
+              except ValueError:
+                  print(f"  FAIL: {path} has unclosed frontmatter (missing closing ---)")
+                  status = 1
+                  continue
+
+              try:
+                  data = yaml.safe_load(fm_text)
+              except yaml.YAMLError as e:
+                  print(f"  FAIL: {path} has invalid YAML: {e}")
+                  status = 1
+                  continue
+
+              if not isinstance(data, dict):
+                  print(f"  FAIL: {path} frontmatter is not a mapping")
+                  status = 1
+                  continue
+
+              missing = [f for f in required_fields if f not in data]
+              if missing:
+                  print(f"  FAIL: {path} missing required fields: {', '.join(missing)}")
+                  status = 1
+              else:
+                  print(f"  OK: {path} (fields: {', '.join(data.keys())})")
+
+          sys.exit(status)
+          PYEOF

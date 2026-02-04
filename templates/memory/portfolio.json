@@ -1,0 +1,35 @@
+{
+  "lastUpdated": null,
+  "network": "unknown",
+  "balances": {
+    "btc": {
+      "satoshis": 0,
+      "address": null
+    },
+    "stx": {
+      "microStx": 0,
+      "address": null
+    },
+    "sbtc": {
+      "satoshis": 0
+    },
+    "tokens": []
+  },
+  "defi": {
+    "alex": {
+      "positions": []
+    },
+    "zest": {
+      "supplied": [],
+      "borrowed": []
+    }
+  },
+  "nfts": [],
+  "transactions": {
+    "totalSent": 0,
+    "totalReceived": 0,
+    "firstTransaction": null,
+    "lastTransaction": null
+  },
+  "notes": "This snapshot reflects my on-chain state. Update after significant portfolio changes."
+}

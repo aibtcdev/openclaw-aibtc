@@ -1,0 +1,25 @@
+{
+  "human": {
+    "riskTolerance": "unknown",
+    "preferredNetwork": "unknown",
+    "typicalTransactionSize": {
+      "btc": null,
+      "stx": null
+    },
+    "favoriteDeFiProtocols": [],
+    "communicationStyle": "unknown",
+    "timezone": "unknown",
+    "responseStyle": "unknown"
+  },
+  "transactionPatterns": {
+    "frequentRecipients": [],
+    "commonAmounts": [],
+    "preferredConfirmationLevel": "explicit"
+  },
+  "moltbook": {
+    "contentPreferences": [],
+    "engagementStyle": "unknown",
+    "topicsOfInterest": []
+  },
+  "notes": "This file will populate as I learn my human's patterns and preferences."
+}

@@ -1,5 +1,7 @@
 # OpenClaw + aibtc
 
+![CI](https://github.com/aibtcdev/openclaw-aibtc/actions/workflows/ci.yml/badge.svg)
+
 One-click deployment of [OpenClaw](https://openclaw.ai) with Bitcoin & Stacks blockchain tools via [aibtc-mcp](https://github.com/aibtcdev/aibtc-mcp-server).
 
 ## Features
@@ -128,12 +130,60 @@ During setup, you'll be asked for:
 | OpenRouter API Key | https://openrouter.ai/keys |
 | Telegram Bot Token | Message @BotFather on Telegram |
 
-## Security
+## Security Model
 
-- **Passwords are never stored** - The agent always asks for your wallet password
-- **Confirmation required** - All transactions require explicit approval
-- **Auto-lock** - Wallet is locked immediately after each transaction
-- **Docker isolated** - Everything runs in containers, nothing on your host
+This agent operates autonomously within configured spending limits. Security comes from operation tiers and daily caps, not asking permission on every transaction.
+
+### Operation Tiers
+
+- **Tier 0 (Read-Only)**: Check balances, look up BNS names, view DeFi info - available to all users
+- **Tier 1 (Auto-Approved)**: Small transfers and swaps within your daily limit - executes autonomously, logs result
+- **Tier 2 (Confirmation)**: Large amounts or daily limit exceeded - asks for yes/no confirmation (no password)
+- **Tier 3 (High-Security)**: Export wallet, deploy contracts - requires password
+
+### Autonomy Levels
+
+Set during setup (configurable in `data/workspace/memory/state.json`):
+
+| Level | Daily Limit | Per-Tx Limit | Best For |
+|-------|-------------|--------------|----------|
+| Conservative | $1/day | $0.50 | Testing, minimal autonomy |
+| Balanced (default) | $10/day | $5 | Daily operations, routine DeFi |
+| Autonomous | $50/day | $25 | Active trading, high trust |
+
+### User Authorization
+
+Only Telegram users in `ALLOWED_USERS` can execute transactions (Tier 1-3). Everyone else can use read-only tools (Tier 0).
+
+### Security Features
+
+- **Session-based wallet unlock** - Unlocked once per session, not per transaction
+- **Daily spending limits** - Automatically resets at midnight UTC
+- **Transaction logging** - Every operation logged to `journal.md` with amount, tier, and txid
+- **Password stored securely** - Encrypted, never logged or echoed
+- **Docker isolated** - Everything runs in containers
+
+## How Autonomy Works
+
+Your agent can operate independently within the limits you set:
+
+**Example - Balanced Mode ($10/day):**
+- User: "Swap 5 STX for ALEX if the rate looks good"
+- Agent: Checks pool, finds good rate, executes autonomously (within $5 per-tx limit)
+- Agent: "Swapped 5 STX for 142.3 ALEX. TxID: abc123... Daily spend: $2.50 / $10.00"
+
+**Example - Limit Exceeded:**
+- Agent wants to send 20 STX (~$10) but daily limit already at $3/10
+- Agent: "This would put daily spend at $13, exceeding $10 limit. Confirm? (yes/no)"
+- User: "yes"
+- Agent: Executes after confirmation
+
+**Example - High-Security Operation:**
+- User: "Export my wallet"
+- Agent: "Wallet export requires your password for security"
+- Only executes after password provided
+
+You can adjust autonomy level in `data/workspace/memory/state.json` at any time.
 
 ## Commands
 
@@ -160,10 +210,15 @@ Edit `.env` to change settings:
 OPENROUTER_API_KEY=sk-or-v1-...
 TELEGRAM_BOT_TOKEN=123456:ABC...
 
+# Security: Users who can execute transactions (comma-separated Telegram user IDs)
+ALLOWED_USERS=123456789,987654321
+
 # Optional
 NETWORK=mainnet          # or testnet
 OPENCLAW_GATEWAY_PORT=18789
 ```
+
+**Finding your Telegram user ID**: Message [@userinfobot](https://t.me/userinfobot) on Telegram
 
 ## Wallet Setup
 
@@ -231,19 +286,14 @@ docker compose up -d
 
 ### Quick Skill Update (existing installs)
 
-If you installed before and want the latest skill improvements (daemon mode for wallet persistence):
+To update just the skills without rebuilding:
 
 ```bash
-curl -sSL https://aibtc.com/update-skill.sh | sh
-```
-
-Or manually:
-```bash
-cd /opt/openclaw-aibtc  # or ~/openclaw-aibtc
-curl -sSL https://aibtc.com/skills/aibtc/SKILL.md -o data/workspace/skills/aibtc/SKILL.md
-chown 1000:1000 data/workspace/skills/aibtc/SKILL.md
+cd ~/openclaw-aibtc  # or your install directory
 docker compose restart
 ```
+
+The skills are now embedded in the setup script, so a full `git pull && docker compose build` is recommended for updates.
 
 ## Troubleshooting
 
