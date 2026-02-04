@@ -10,4 +10,4 @@ Status: `completed`
 
 ## Phase 3: Update README install instructions
 Goal: Replace all 4 `./setup.sh` references in `README.md` with `./local-setup.sh` (local/Docker Desktop) or `./vps-setup.sh` (VPS/cloud) depending on context.
-Status: `planned`
+Status: `completed`
