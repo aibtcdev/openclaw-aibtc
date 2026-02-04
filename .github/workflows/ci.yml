@@ -113,6 +113,16 @@ jobs:
       - name: Run markdownlint-cli2
         run: npx markdownlint-cli2 "**/*.md" "#node_modules"
 
+  integration-tests:
+    name: Setup Script Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run heredoc sync and autonomy preset tests
+        run: bash tests/test-setup-sync.sh
+
   yaml-frontmatter:
     name: SKILL.md YAML Frontmatter Validation
     runs-on: ubuntu-latest
