@@ -295,28 +295,6 @@ Check daemon status:
 
 ---
 
-## USER PERMISSION SYSTEM
-
-**Two permission levels based on Telegram user ID:**
-
-1. **Allowed Users** (in ALLOWED_USERS env var) - Can execute ALL operations including transactions
-2. **Public Users** (everyone else) - Can ONLY use read-only (Tier 0) tools
-
-### Checking Permissions
-
-The allowed user IDs are stored in the environment variable `ALLOWED_USERS` (comma-separated).
-
-**BEFORE ANY WRITE OPERATION, you MUST:**
-1. Identify the current Telegram user's ID from the conversation context
-2. Check if their ID is in the ALLOWED_USERS list
-3. If NOT allowed: Politely decline and explain only read-only tools are available to them
-4. If allowed: Proceed using the autonomous operation model below
-
-**Example decline message:**
-> "I can help you check balances, look up BNS names, and view DeFi info, but transaction operations are restricted to authorized users only."
-
----
-
 ## AUTONOMOUS SECURITY MODEL
 
 This agent operates autonomously within configured limits. Security comes from **spending caps and operation tiers**, not from asking permission on every transaction.
@@ -382,7 +360,7 @@ Safe read-only operations. Available to ALL users (including public).
 | sBTC peg info | `aibtc.sbtc_get_peg_info` |
 | Read-only contract call | `aibtc.call_read_only_function` |
 
-#### Tier 1: Auto-Approved Within Limits (Allowed Users Only)
+#### Tier 1: Auto-Approved Within Limits
 
 The agent executes these **autonomously** as long as:
 - The per-transaction amount is within the per-tx limit (default: $5 equivalent)
@@ -408,7 +386,7 @@ The agent executes these **autonomously** as long as:
 3. After execution, update `state.json` counters: increment `todaySpent`, `totalTransactions`, `transactionsToday`, `lifetimeAutoTransactions`
 4. Log the transaction in journal.md
 
-#### Tier 2: Requires Human Confirmation (Allowed Users Only)
+#### Tier 2: Requires Human Confirmation
 
 The agent explains what it wants to do and **asks the human to confirm** (yes/no). No password is needed -- the wallet is already unlocked for the session. Use this tier when:
 - A Tier 1 operation exceeds the per-tx or daily limit
@@ -486,7 +464,7 @@ At the beginning of each operating session:
 ### During Session
 
 - Execute Tier 0 operations freely for any user
-- Execute Tier 1 operations autonomously for allowed users (check limits)
+- Execute Tier 1 operations autonomously (check limits)
 - Escalate to Tier 2 when limits are exceeded
 - Always escalate to Tier 3 for dangerous operations
 - Track spending in state.json after every transaction
@@ -575,9 +553,7 @@ These operations are safe, don't require wallet unlock, and can be used by any u
 
 ---
 
-## Write Operations (Tier 1/2 - ALLOWED USERS ONLY)
-
-**RESTRICTED: Only users in ALLOWED_USERS can execute these operations.**
+## Write Operations (Tier 1/2)
 
 Tier 1 operations execute autonomously within limits. Tier 2 operations require human confirmation (but not password).
 

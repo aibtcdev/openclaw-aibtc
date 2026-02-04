@@ -151,10 +151,6 @@ Set during setup (configurable in `data/workspace/memory/state.json`):
 | Balanced (default) | $10/day | $5 | Daily operations, routine DeFi |
 | Autonomous | $50/day | $25 | Active trading, high trust |
 
-### User Authorization
-
-Only Telegram users in `ALLOWED_USERS` can execute transactions (Tier 1-3). Everyone else can use read-only tools (Tier 0).
-
 ### Security Features
 
 - **Session-based wallet unlock** - Unlocked once per session, not per transaction
@@ -210,15 +206,10 @@ Edit `.env` to change settings:
 OPENROUTER_API_KEY=sk-or-v1-...
 TELEGRAM_BOT_TOKEN=123456:ABC...
 
-# Security: Users who can execute transactions (comma-separated Telegram user IDs)
-ALLOWED_USERS=123456789,987654321
-
 # Optional
 NETWORK=mainnet          # or testnet
 OPENCLAW_GATEWAY_PORT=18789
 ```
-
-**Finding your Telegram user ID**: Message [@userinfobot](https://t.me/userinfobot) on Telegram
 
 ## Wallet Setup
 
