@@ -1,5 +1,7 @@
 # OpenClaw + aibtc
 
+![CI](https://github.com/aibtcdev/openclaw-aibtc/actions/workflows/ci.yml/badge.svg)
+
 One-click deployment of [OpenClaw](https://openclaw.ai) with Bitcoin & Stacks blockchain tools via [aibtc-mcp](https://github.com/aibtcdev/aibtc-mcp-server).
 
 ## Features
