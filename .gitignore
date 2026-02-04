@@ -25,3 +25,7 @@ node_modules/
 # Quest planning
 .planning/
 .planning-completed-*/
+.planning-archived-*/
+
+# Claude Code
+.claude/
