@@ -84,7 +84,7 @@ systemctl start docker
 # Clone and setup
 git clone https://github.com/aibtcdev/openclaw-aibtc.git
 cd openclaw-aibtc
-./setup.sh
+./vps-setup.sh
 ```
 
 #### Step 5: Keep it running
@@ -112,7 +112,7 @@ su - openclaw
 cd /home/openclaw
 git clone https://github.com/aibtcdev/openclaw-aibtc.git
 cd openclaw-aibtc
-./setup.sh
+./vps-setup.sh
 ```
 
 ## Requirements
