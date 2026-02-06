@@ -1855,6 +1855,11 @@ docker compose build
 printf "${BLUE}Starting agent...${NC}\n"
 docker compose up -d
 
+sleep 3
+
+printf "${BLUE}Restarting to finalize config...${NC}\n"
+docker compose restart
+
 sleep 5
 
 if docker compose ps | grep -q "Up"; then

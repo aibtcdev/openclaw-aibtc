@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deploy Agent — OpenClaw + aibtc</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #000;
+      --fg: #ededed;
+      --gray-100: #ededed;
+      --gray-200: #a1a1a1;
+      --gray-400: #888;
+      --gray-600: #666;
+      --gray-800: #444;
+      --gray-900: #333;
+      --gray-950: #222;
+      --gray-1000: #111;
+      --blue: #0070f3;
+      --green: #0070f3;
+      --success: #46a758;
+      --error: #e5484d;
+      --warning: #f5a623;
+      --border: #333;
+      --radius: 6px;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--fg);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    #app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .header-inner {
+      max-width: 640px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-mark {
+      font-size: 20px;
+      line-height: 1;
+    }
+    .logo-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--fg);
+      letter-spacing: -0.02em;
+    }
+    .logo-text span { color: var(--gray-400); font-weight: 400; }
+    .logo-separator {
+      width: 1px;
+      height: 20px;
+      background: var(--border);
+      margin: 0 4px;
+    }
+
+    /* Progress steps */
+    .progress-bar {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .progress-inner {
+      max-width: 640px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+    .progress-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: default;
+    }
+    .progress-step.clickable { cursor: pointer; }
+    .progress-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      color: var(--gray-600);
+      background: transparent;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+    }
+    .progress-step.active .progress-num {
+      background: var(--fg);
+      color: var(--bg);
+      border-color: var(--fg);
+    }
+    .progress-step.done .progress-num {
+      background: transparent;
+      color: var(--fg);
+      border-color: var(--gray-800);
+    }
+    .progress-step-label {
+      font-size: 13px;
+      color: var(--gray-600);
+      transition: color 0.15s ease;
+      white-space: nowrap;
+    }
+    .progress-step.active .progress-step-label { color: var(--fg); }
+    .progress-step.done .progress-step-label { color: var(--gray-400); }
+    .progress-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+      margin: 0 12px;
+      min-width: 16px;
+    }
+
+    /* Main content */
+    main {
+      flex: 1;
+      padding: 40px 24px 32px;
+    }
+    .main-inner {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    .step-title {
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.04em;
+      line-height: 1.2;
+      margin-bottom: 8px;
+    }
+    .step-desc {
+      font-size: 14px;
+      color: var(--gray-400);
+      margin-bottom: 32px;
+    }
+
+    /* Form elements */
+    label.label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--gray-200);
+      margin-bottom: 8px;
+    }
+    .field-input {
+      width: 100%;
+      padding: 8px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--fg);
+      font-family: var(--font);
+      font-size: 14px;
+      line-height: 1.5;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .field-input::placeholder { color: var(--gray-800); }
+    .field-input:hover { border-color: var(--gray-800); }
+    .field-input:focus { border-color: var(--gray-100); }
+    .field-input.mono { font-family: var(--mono); font-size: 13px; }
+    textarea.field-input { resize: vertical; }
+
+    /* Model picker */
+    .model-picker { position: relative; }
+    .model-trigger {
+      width: 100%;
+      padding: 8px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--fg);
+      font-family: var(--font);
+      font-size: 14px;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      transition: border-color 0.15s ease;
+    }
+    .model-trigger:hover { border-color: var(--gray-800); }
+    .model-trigger.open { border-color: var(--gray-100); }
+    .model-trigger-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .model-trigger-sub { font-size: 12px; color: var(--gray-600); white-space: nowrap; flex-shrink: 0; }
+    .model-trigger-chevron {
+      flex-shrink: 0;
+      color: var(--gray-600);
+      transition: transform 0.15s ease;
+    }
+    .model-trigger.open .model-trigger-chevron { transform: rotate(180deg); }
+
+    .model-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: var(--gray-1000);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      z-index: 50;
+      display: none;
+      flex-direction: column;
+      max-height: 360px;
+      overflow: hidden;
+    }
+    .model-dropdown.open { display: flex; }
+    .model-search {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      background: transparent;
+      color: var(--fg);
+      font-family: var(--font);
+      font-size: 13px;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      outline: none;
+      width: 100%;
+    }
+    .model-search::placeholder { color: var(--gray-800); }
+    .model-list {
+      overflow-y: auto;
+      flex: 1;
+    }
+    .model-list::-webkit-scrollbar { width: 6px; }
+    .model-list::-webkit-scrollbar-track { background: transparent; }
+    .model-list::-webkit-scrollbar-thumb { background: var(--gray-900); border-radius: 3px; }
+    .model-group-label {
+      padding: 8px 12px 4px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--gray-600);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      position: sticky;
+      top: 0;
+      background: var(--gray-1000);
+    }
+    .model-option {
+      padding: 8px 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: background 0.1s ease;
+    }
+    .model-option:hover { background: var(--gray-950); }
+    .model-option.selected { background: var(--gray-950); }
+    .model-option-name {
+      font-size: 13px;
+      color: var(--fg);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .model-option-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .model-option-tag {
+      font-size: 10px;
+      font-weight: 500;
+      padding: 1px 6px;
+      border-radius: 3px;
+      background: var(--gray-950);
+      color: var(--gray-400);
+      border: 1px solid var(--border);
+    }
+    .model-option-cost {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--gray-600);
+      white-space: nowrap;
+    }
+    .model-empty {
+      padding: 24px 12px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--gray-600);
+    }
+
+    .hint {
+      font-size: 13px;
+      color: var(--gray-600);
+      margin-top: 8px;
+    }
+    .hint a { color: var(--gray-200); text-decoration: underline; text-underline-offset: 2px; }
+    .hint a:hover { color: var(--fg); }
+
+    .field-group { margin-bottom: 24px; }
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 640px) {
+      .field-row { grid-template-columns: 1fr; }
+    }
+
+    /* Toggle / segmented control */
+    .segmented {
+      display: inline-flex;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .segmented-btn {
+      padding: 6px 16px;
+      font-size: 13px;
+      font-family: var(--font);
+      color: var(--gray-400);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .segmented-btn:not(:last-child) { border-right: 1px solid var(--border); }
+    .segmented-btn:hover { color: var(--fg); background: var(--gray-1000); }
+    .segmented-btn.active {
+      color: var(--fg);
+      background: var(--gray-950);
+    }
+
+    /* Select cards */
+    .select-card {
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 0.15s ease;
+      width: 100%;
+    }
+    .select-card:hover { border-color: var(--gray-800); }
+    .select-card.active { border-color: var(--fg); }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--fg);
+      margin-bottom: 4px;
+    }
+    .card-value {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--gray-200);
+    }
+    .card-detail {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--gray-600);
+      margin-top: 2px;
+    }
+    .card-desc {
+      font-size: 13px;
+      color: var(--gray-600);
+      margin-top: 12px;
+      line-height: 1.5;
+    }
+    .card-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .card-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    @media (max-width: 640px) {
+      .card-grid-3 { grid-template-columns: 1fr; }
+      .card-grid-2 { grid-template-columns: 1fr; }
+    }
+
+    /* Radio indicator */
+    .radio-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color 0.15s ease;
+    }
+    .select-card.active .radio-dot { border-color: var(--fg); }
+    .radio-dot-inner {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--fg);
+      transform: scale(0);
+      transition: transform 0.15s ease;
+    }
+    .select-card.active .radio-dot-inner { transform: scale(1); }
+
+    /* Badge */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 500;
+      border-radius: 999px;
+      background: var(--gray-950);
+      color: var(--gray-400);
+      border: 1px solid var(--border);
+    }
+
+    /* Password strength */
+    .pw-strength {
+      height: 2px;
+      background: var(--gray-950);
+      border-radius: 1px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    .pw-strength-fill {
+      height: 100%;
+      border-radius: 1px;
+      width: 0;
+      transition: width 0.2s ease, background 0.2s ease;
+    }
+    .pw-strength-label {
+      font-size: 12px;
+      color: var(--gray-600);
+      margin-top: 6px;
+    }
+
+    /* Buttons */
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 16px;
+      background: var(--fg);
+      color: var(--bg);
+      border: 1px solid var(--fg);
+      border-radius: var(--radius);
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      gap: 6px;
+    }
+    .btn-primary:hover:not(:disabled) { background: #ccc; border-color: #ccc; }
+    .btn-primary:active:not(:disabled) { background: #aaa; border-color: #aaa; }
+    .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 16px;
+      background: transparent;
+      color: var(--gray-200);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      gap: 6px;
+    }
+    .btn-secondary:hover:not(:disabled) { background: var(--gray-1000); border-color: var(--gray-800); color: var(--fg); }
+    .btn-secondary:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      background: transparent;
+      color: var(--gray-400);
+      border: none;
+      font-family: var(--font);
+      font-size: 14px;
+      cursor: pointer;
+      transition: color 0.15s ease;
+    }
+    .btn-ghost:hover { color: var(--fg); }
+    .btn-ghost:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* Review table */
+    .review-table {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .review-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+    }
+    .review-row + .review-row { border-top: 1px solid var(--border); }
+    .review-key { font-size: 14px; color: var(--gray-400); }
+    .review-val { font-size: 14px; font-family: var(--mono); color: var(--fg); }
+
+    .info-box {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      margin-top: 16px;
+    }
+    .info-box p { font-size: 13px; color: var(--gray-600); line-height: 1.5; }
+
+    /* Terminal */
+    .terminal {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--gray-1000);
+    }
+    .terminal-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--gray-400);
+      font-weight: 500;
+    }
+    .terminal-body {
+      padding: 16px;
+      height: 300px;
+      overflow-y: auto;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--gray-400);
+    }
+    .terminal-body::-webkit-scrollbar { width: 6px; }
+    .terminal-body::-webkit-scrollbar-track { background: transparent; }
+    .terminal-body::-webkit-scrollbar-thumb { background: var(--gray-900); border-radius: 3px; }
+
+    /* Deploy steps sidebar */
+    .deploy-layout {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 640px) {
+      .deploy-layout { grid-template-columns: 1fr; }
+    }
+    .deploy-step-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 0;
+    }
+    .deploy-step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-family: var(--mono);
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+    }
+    .deploy-step-num.pending {
+      border: 1px solid var(--border);
+      color: var(--gray-600);
+      background: transparent;
+    }
+    .deploy-step-num.running {
+      border: 1px solid var(--fg);
+      color: var(--fg);
+      background: transparent;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    .deploy-step-num.done {
+      border: 1px solid var(--success);
+      color: var(--success);
+      background: transparent;
+    }
+    .deploy-step-num.error {
+      border: 1px solid var(--error);
+      color: var(--error);
+      background: transparent;
+    }
+    .deploy-step-label {
+      font-size: 13px;
+      color: var(--gray-600);
+      transition: color 0.15s ease;
+    }
+    .deploy-step-item.active .deploy-step-label { color: var(--fg); }
+    .deploy-step-item.done .deploy-step-label { color: var(--gray-400); }
+
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    /* Success */
+    .success-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 2px solid var(--success);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+    }
+    .success-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 32px;
+    }
+    .mgmt-box {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-top: 32px;
+      text-align: left;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .mgmt-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--gray-600);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+    .mgmt-row {
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 4px 0;
+      display: flex;
+      gap: 8px;
+    }
+    .mgmt-row .key { color: var(--gray-600); min-width: 56px; }
+    .mgmt-row .val { color: var(--gray-200); word-break: break-all; }
+
+    /* Step transition */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .step-enter { animation: fadeIn 0.2s ease-out forwards; }
+
+    /* Footer */
+    footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+    }
+    .footer-inner {
+      max-width: 640px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Utilities */
+    .hidden { display: none !important; }
+    .text-center { text-align: center; }
+    .mt-4 { margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div id="app">
+
+    <!-- Header -->
+    <header>
+      <div class="header-inner">
+        <span class="logo-mark">&#8383;</span>
+        <div class="logo-separator"></div>
+        <span class="logo-text">openclaw <span>+ aibtc</span></span>
+      </div>
+    </header>
+
+    <!-- Progress -->
+    <div id="progress-bar" class="progress-bar">
+      <div class="progress-inner" id="progress-track"></div>
+    </div>
+
+    <!-- Steps -->
+    <main>
+      <div class="main-inner">
+
+        <!-- Step 0: VPS -->
+        <div class="step step-enter" data-step="0">
+          <h2 class="step-title">Connect to your VPS</h2>
+          <p class="step-desc">SSH into your server to set everything up.</p>
+
+          <div class="field-row field-group">
+            <div>
+              <label class="label">Hostname</label>
+              <input type="text" id="vps-host" placeholder="143.198.42.10" class="field-input" data-validate>
+            </div>
+            <div>
+              <label class="label">Username</label>
+              <input type="text" id="vps-user" value="root" placeholder="root" class="field-input" data-validate>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="label">Authentication</label>
+            <div class="segmented" style="margin-bottom:12px">
+              <button onclick="setAuthMethod('password')" id="auth-pw-btn" class="segmented-btn active">Password</button>
+              <button onclick="setAuthMethod('key')" id="auth-key-btn" class="segmented-btn">SSH Key</button>
+            </div>
+            <div id="auth-password">
+              <input type="password" id="vps-password" placeholder="SSH password" class="field-input" data-validate>
+            </div>
+            <div id="auth-key" class="hidden">
+              <textarea id="vps-key" placeholder="Paste your private key..." rows="4" class="field-input mono" data-validate></textarea>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:12px">
+            <button onclick="testConnection()" id="test-btn" class="btn-secondary">Test Connection</button>
+            <span id="test-result" style="font-size:13px"></span>
+          </div>
+        </div>
+
+        <!-- Step 1: API Keys -->
+        <div class="step hidden" data-step="1">
+          <h2 class="step-title">API Keys</h2>
+          <p class="step-desc">Your agent needs these to think and communicate.</p>
+
+          <div class="field-group">
+            <label class="label">OpenRouter API Key</label>
+            <input type="password" id="openrouter-key" placeholder="sk-or-v1-..." class="field-input mono" data-validate onblur="onApiKeyBlur()">
+            <p class="hint">Powers the AI model. <a href="https://openrouter.ai/keys" target="_blank">Get a key</a></p>
+          </div>
+          <div class="field-group">
+            <label class="label">AI Model</label>
+            <div class="model-picker" id="model-picker">
+              <button type="button" class="model-trigger" id="model-trigger" onclick="toggleModelPicker()">
+                <span class="model-trigger-label" id="model-trigger-label">Claude Sonnet 4</span>
+                <span class="model-trigger-sub" id="model-trigger-sub">Recommended</span>
+                <svg class="model-trigger-chevron" width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="model-dropdown" id="model-dropdown">
+                <input type="text" class="model-search" id="model-search" placeholder="Search models..." oninput="filterModels()">
+                <div class="model-list" id="model-list"></div>
+              </div>
+            </div>
+            <input type="hidden" id="model-select" value="openrouter/anthropic/claude-sonnet-4">
+            <p class="hint" id="model-hint">Only models with tool calling. <a href="https://openrouter.ai/models" target="_blank">Browse all</a></p>
+          </div>
+          <div class="field-group">
+            <label class="label">Telegram Bot Token</label>
+            <input type="password" id="telegram-token" placeholder="123456789:ABCdefGHI..." class="field-input mono" data-validate>
+            <p class="hint">Chat interface for your agent. <a href="https://t.me/BotFather" target="_blank">Create with @BotFather</a></p>
+          </div>
+        </div>
+
+        <!-- Step 2: Network -->
+        <div class="step hidden" data-step="2">
+          <h2 class="step-title">Network</h2>
+          <p class="step-desc">Which Bitcoin and Stacks network should your agent use?</p>
+
+          <div class="card-grid-2">
+            <button onclick="setNetwork('mainnet')" id="net-mainnet" class="select-card active">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                <div class="radio-dot"><div class="radio-dot-inner"></div></div>
+                <span class="card-title" style="margin:0">Mainnet</span>
+              </div>
+              <p class="card-desc" style="margin-top:0">Real Bitcoin and Stacks. Your agent operates with real value.</p>
+            </button>
+            <button onclick="setNetwork('testnet')" id="net-testnet" class="select-card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                <div class="radio-dot"><div class="radio-dot-inner"></div></div>
+                <span class="card-title" style="margin:0">Testnet</span>
+              </div>
+              <p class="card-desc" style="margin-top:0">Test tokens only. Safe for experimentation.</p>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 3: Wallet Password -->
+        <div class="step hidden" data-step="3">
+          <h2 class="step-title">Wallet Password</h2>
+          <p class="step-desc">Your agent uses this to unlock its wallet each session.</p>
+
+          <div style="max-width:400px">
+            <div class="field-group">
+              <label class="label">Password</label>
+              <div style="position:relative">
+                <input type="password" id="wallet-password" placeholder="Choose a strong password" class="field-input" style="padding-right:56px" data-validate oninput="updatePasswordStrength(); checkPasswordMatch(); validateStep();">
+                <button type="button" onclick="togglePasswordVisibility()" id="pw-toggle" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--gray-600);background:none;border:none;cursor:pointer;font-family:var(--font)">Show</button>
+              </div>
+              <div class="pw-strength"><div class="pw-strength-fill" id="pw-strength-fill"></div></div>
+              <p class="pw-strength-label" id="pw-strength-label"></p>
+            </div>
+            <div class="field-group">
+              <label class="label">Confirm Password</label>
+              <input type="password" id="wallet-password-confirm" placeholder="Re-enter password" class="field-input" data-validate oninput="checkPasswordMatch(); validateStep();">
+              <p id="pw-match" class="hidden" style="font-size:13px;margin-top:8px"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: Autonomy -->
+        <div class="step hidden" data-step="4">
+          <h2 class="step-title">Autonomy Level</h2>
+          <p class="step-desc">How much can your agent spend without asking?</p>
+
+          <div class="card-grid-3">
+            <button onclick="setAutonomy('conservative')" id="auto-conservative" class="select-card">
+              <div class="card-title">Conservative</div>
+              <div class="card-value">$1 / day</div>
+              <div class="card-detail">$0.50 per tx</div>
+              <p class="card-desc">Asks before most transactions.</p>
+            </button>
+            <button onclick="setAutonomy('balanced')" id="auto-balanced" class="select-card active">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                <span class="card-title" style="margin:0">Balanced</span>
+                <span class="badge">Recommended</span>
+              </div>
+              <div class="card-value">$10 / day</div>
+              <div class="card-detail">$5 per tx</div>
+              <p class="card-desc">Handles routine operations independently.</p>
+            </button>
+            <button onclick="setAutonomy('autonomous')" id="auto-autonomous" class="select-card">
+              <div class="card-title">Autonomous</div>
+              <div class="card-value">$50 / day</div>
+              <div class="card-detail">$25 per tx</div>
+              <p class="card-desc">Full autonomy within limits.</p>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 5: Review -->
+        <div class="step hidden" data-step="5">
+          <h2 class="step-title">Review & Deploy</h2>
+          <p class="step-desc">Confirm your configuration before deploying.</p>
+
+          <div class="review-table" id="review-table"></div>
+
+          <div class="info-box">
+            <p>Credentials are sent over HTTPS and used only during deployment. Nothing is stored on our servers.</p>
+          </div>
+        </div>
+
+        <!-- Deploy progress -->
+        <div id="deploy-screen" class="hidden">
+          <h2 class="step-title">Deploying your agent</h2>
+          <p class="step-desc">This may take a few minutes.</p>
+
+          <div class="deploy-layout">
+            <div id="deploy-steps"></div>
+            <div class="terminal">
+              <div class="terminal-header">Output</div>
+              <div class="terminal-body" id="deploy-log"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Success -->
+        <div id="success-screen" class="hidden text-center" style="padding:48px 0">
+          <div class="success-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M5 13l4 4L19 7" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <h2 class="step-title" style="margin-bottom:8px">Your agent is live</h2>
+          <p id="success-message" style="font-size:14px;color:var(--gray-400)"></p>
+
+          <div class="success-actions" id="success-actions"></div>
+
+          <div class="mgmt-box" id="mgmt-box">
+            <div class="mgmt-title">Management</div>
+            <div id="mgmt-commands"></div>
+          </div>
+
+          <div style="margin-top:24px">
+            <button onclick="location.reload()" class="btn-ghost">Deploy another agent</button>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Footer nav -->
+    <footer id="footer-nav">
+      <div class="footer-inner">
+        <button onclick="prevStep()" id="btn-back" class="btn-ghost" disabled>&larr; Back</button>
+        <button onclick="nextStep()" id="btn-next" class="btn-primary">Continue</button>
+      </div>
+    </footer>
+
+  </div>
+
+<script>
+const STEPS = ['Server', 'API Keys', 'Network', 'Security', 'Autonomy', 'Review'];
+let currentStep = 0;
+let authMethod = 'password';
+let network = 'mainnet';
+let autonomyLevel = 'balanced';
+
+// --- Validation ---
+function canProceed() {
+  switch (currentStep) {
+    case 0: {
+      const host = document.getElementById('vps-host').value.trim();
+      const user = document.getElementById('vps-user').value.trim();
+      const cred = authMethod === 'password'
+        ? document.getElementById('vps-password').value
+        : document.getElementById('vps-key').value;
+      return !!(host && user && cred);
+    }
+    case 1:
+      return !!(document.getElementById('openrouter-key').value.trim() &&
+             document.getElementById('telegram-token').value.trim());
+    case 3: {
+      const pw = document.getElementById('wallet-password').value;
+      const confirm = document.getElementById('wallet-password-confirm').value;
+      return pw.length > 0 && pw === confirm;
+    }
+    default: return true;
+  }
+}
+
+function validateStep() {
+  document.getElementById('btn-next').disabled = !canProceed();
+}
+
+document.addEventListener('input', (e) => {
+  if (e.target.hasAttribute('data-validate')) validateStep();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') return;
+    if (document.activeElement && document.activeElement.id === 'model-search') return;
+    if (!document.getElementById('deploy-screen').classList.contains('hidden')) return;
+    if (!document.getElementById('success-screen').classList.contains('hidden')) return;
+    e.preventDefault();
+    nextStep();
+  }
+});
+
+// --- Progress ---
+function renderProgress() {
+  const track = document.getElementById('progress-track');
+  track.innerHTML = '';
+
+  STEPS.forEach((label, i) => {
+    const step = document.createElement('div');
+    step.className = 'progress-step' +
+      (i === currentStep ? ' active' : '') +
+      (i < currentStep ? ' done clickable' : '');
+
+    if (i < currentStep) step.onclick = () => goToStep(i);
+
+    const num = document.createElement('div');
+    num.className = 'progress-num';
+    if (i < currentStep) {
+      num.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    } else {
+      num.textContent = i + 1;
+    }
+
+    const lbl = document.createElement('span');
+    lbl.className = 'progress-step-label';
+    lbl.textContent = label;
+
+    step.appendChild(num);
+    step.appendChild(lbl);
+    track.appendChild(step);
+
+    if (i < STEPS.length - 1) {
+      const line = document.createElement('div');
+      line.className = 'progress-line';
+      track.appendChild(line);
+    }
+  });
+}
+
+// --- Steps ---
+function showStep(n) {
+  document.querySelectorAll('.step').forEach(el => {
+    el.classList.add('hidden');
+    el.classList.remove('step-enter');
+  });
+  const step = document.querySelector(`.step[data-step="${n}"]`);
+  if (step) {
+    step.classList.remove('hidden');
+    void step.offsetWidth;
+    step.classList.add('step-enter');
+    requestAnimationFrame(() => {
+      const input = step.querySelector('input:not([type=hidden]), textarea');
+      if (input && !input.value) input.focus();
+    });
+  }
+
+  document.getElementById('btn-back').disabled = n === 0;
+  const btn = document.getElementById('btn-next');
+  btn.textContent = n === STEPS.length - 1 ? 'Deploy' : 'Continue';
+  if (n === 5) buildReview();
+  renderProgress();
+  validateStep();
+}
+
+function goToStep(n) { currentStep = n; showStep(n); }
+
+function nextStep() {
+  if (!canProceed()) return;
+  if (currentStep === STEPS.length - 1) { startDeploy(); return; }
+  currentStep++;
+  showStep(currentStep);
+}
+
+function prevStep() {
+  if (currentStep > 0) { currentStep--; showStep(currentStep); }
+}
+
+// --- Auth toggle ---
+function setAuthMethod(method) {
+  authMethod = method;
+  document.getElementById('auth-password').classList.toggle('hidden', method !== 'password');
+  document.getElementById('auth-key').classList.toggle('hidden', method !== 'key');
+  document.getElementById('auth-pw-btn').className = 'segmented-btn' + (method === 'password' ? ' active' : '');
+  document.getElementById('auth-key-btn').className = 'segmented-btn' + (method === 'key' ? ' active' : '');
+  validateStep();
+}
+
+// --- Network ---
+function setNetwork(net) {
+  network = net;
+  document.getElementById('net-mainnet').className = 'select-card' + (net === 'mainnet' ? ' active' : '');
+  document.getElementById('net-testnet').className = 'select-card' + (net === 'testnet' ? ' active' : '');
+}
+
+// --- Autonomy ---
+function setAutonomy(level) {
+  autonomyLevel = level;
+  ['conservative', 'balanced', 'autonomous'].forEach(l => {
+    document.getElementById('auto-' + l).className = 'select-card' + (l === level ? ' active' : '');
+  });
+}
+
+// --- Model picker ---
+let modelsFetched = false;
+let allModels = [
+  { id: 'anthropic/claude-sonnet-4', name: 'Claude Sonnet 4', promptCost: '0.000003', completionCost: '0.000015', context: 200000, recommended: true },
+  { id: 'anthropic/claude-opus-4', name: 'Claude Opus 4', promptCost: '0.000015', completionCost: '0.000075', context: 200000, recommended: true },
+  { id: 'anthropic/claude-haiku-4', name: 'Claude Haiku 4', promptCost: '0.0000008', completionCost: '0.000004', context: 200000, recommended: true },
+  { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', promptCost: '0.0000025', completionCost: '0.000015', context: 1000000, recommended: true },
+  { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash', promptCost: '0.00000015', completionCost: '0.0000006', context: 1000000, recommended: true },
+  { id: 'openai/gpt-4o', name: 'GPT-4o', promptCost: '0.0000025', completionCost: '0.00001', context: 128000, recommended: true },
+  { id: 'deepseek/deepseek-chat-v3-0324', name: 'DeepSeek V3', promptCost: '0.0000003', completionCost: '0.0000009', context: 128000, recommended: true },
+];
+let selectedModelId = 'anthropic/claude-sonnet-4';
+
+function formatCost(costStr) {
+  const c = parseFloat(costStr || '0');
+  if (c === 0) return 'Free';
+  const perMil = c * 1000000;
+  if (perMil < 0.01) return '<$0.01';
+  if (perMil < 1) return '$' + perMil.toFixed(2);
+  return '$' + perMil.toFixed(1);
+}
+
+function formatContext(ctx) {
+  if (!ctx) return '';
+  if (ctx >= 1000000) return (ctx / 1000000) + 'M';
+  return Math.round(ctx / 1000) + 'K';
+}
+
+function toggleModelPicker() {
+  const trigger = document.getElementById('model-trigger');
+  const dropdown = document.getElementById('model-dropdown');
+  const isOpen = dropdown.classList.contains('open');
+
+  if (isOpen) {
+    closeModelPicker();
+  } else {
+    trigger.classList.add('open');
+    dropdown.classList.add('open');
+    document.getElementById('model-search').value = '';
+    renderModelList(allModels);
+    requestAnimationFrame(() => document.getElementById('model-search').focus());
+  }
+}
+
+function closeModelPicker() {
+  document.getElementById('model-trigger').classList.remove('open');
+  document.getElementById('model-dropdown').classList.remove('open');
+}
+
+// Close on outside click or Escape
+document.addEventListener('mousedown', (e) => {
+  const picker = document.getElementById('model-picker');
+  if (picker && !picker.contains(e.target)) closeModelPicker();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModelPicker();
+});
+
+function selectModel(id) {
+  selectedModelId = id;
+  document.getElementById('model-select').value = 'openrouter/' + id;
+
+  const m = allModels.find(x => x.id === id);
+  const label = document.getElementById('model-trigger-label');
+  const sub = document.getElementById('model-trigger-sub');
+  label.textContent = m ? m.name : id;
+  sub.textContent = m ? formatCost(m.promptCost) + ' / ' + formatCost(m.completionCost) + ' per 1M tokens' : '';
+  if (m && m.recommended) sub.textContent = 'Recommended — ' + sub.textContent;
+
+  closeModelPicker();
+}
+
+function filterModels() {
+  const q = document.getElementById('model-search').value.toLowerCase();
+  const filtered = allModels.filter(m =>
+    m.name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q)
+  );
+  renderModelList(filtered);
+}
+
+function renderModelList(models) {
+  const list = document.getElementById('model-list');
+  const recommended = models.filter(m => m.recommended);
+  const others = models.filter(m => !m.recommended);
+
+  let html = '';
+
+  if (recommended.length) {
+    html += '<div class="model-group-label">Recommended</div>';
+    html += recommended.map(m => modelOptionHTML(m)).join('');
+  }
+  if (others.length) {
+    html += '<div class="model-group-label">All models (' + others.length + ')</div>';
+    html += others.map(m => modelOptionHTML(m)).join('');
+  }
+  if (!models.length) {
+    html = '<div class="model-empty">No models found</div>';
+  }
+
+  list.innerHTML = html;
+}
+
+function modelOptionHTML(m) {
+  const sel = m.id === selectedModelId ? ' selected' : '';
+  return `<div class="model-option${sel}" onclick="selectModel('${m.id}')">
+    <span class="model-option-name">${m.name}</span>
+    <span class="model-option-meta">
+      ${m.context ? '<span class="model-option-tag">' + formatContext(m.context) + '</span>' : ''}
+      <span class="model-option-cost">${formatCost(m.promptCost)} in · ${formatCost(m.completionCost)} out</span>
+    </span>
+  </div>`;
+}
+
+async function onApiKeyBlur() {
+  const key = document.getElementById('openrouter-key').value.trim();
+  if (!key || modelsFetched) return;
+  await fetchModels(key);
+}
+
+async function fetchModels(apiKey) {
+  const hint = document.getElementById('model-hint');
+  const sub = document.getElementById('model-trigger-sub');
+  const origSub = sub.textContent;
+  sub.textContent = 'Loading models...';
+
+  try {
+    const res = await fetch('/api/models', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey })
+    });
+    const data = await res.json();
+    if (data.error || !data.models) {
+      hint.innerHTML = '<span style="color:var(--error)">Could not load models. Using defaults.</span>';
+      sub.textContent = origSub;
+      return;
+    }
+
+    // Replace with fetched models, adding openrouter/ prefix awareness
+    allModels = data.models;
+    modelsFetched = true;
+
+    // Re-select current model
+    selectModel(selectedModelId);
+
+    hint.innerHTML = data.models.length + ' models with tool calling. <a href="https://openrouter.ai/models" target="_blank" style="color:var(--gray-200);text-decoration:underline">Browse all</a>';
+  } catch (e) {
+    hint.innerHTML = '<span style="color:var(--error)">Could not load models.</span>';
+    sub.textContent = origSub;
+  }
+}
+
+// --- Password ---
+function updatePasswordStrength() {
+  const pw = document.getElementById('wallet-password').value;
+  const fill = document.getElementById('pw-strength-fill');
+  const label = document.getElementById('pw-strength-label');
+
+  if (!pw) { fill.style.width = '0'; label.textContent = ''; return; }
+
+  let score = 0;
+  if (pw.length >= 6) score++;
+  if (pw.length >= 10) score++;
+  if (pw.length >= 14) score++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+  if (/\d/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+  const levels = [
+    { max: 1, pct: '20%', color: 'var(--error)', text: 'Weak' },
+    { max: 3, pct: '50%', color: 'var(--warning)', text: 'Fair' },
+    { max: 5, pct: '80%', color: 'var(--gray-200)', text: 'Good' },
+    { max: Infinity, pct: '100%', color: 'var(--success)', text: 'Strong' },
+  ];
+
+  const level = levels.find(l => score <= l.max);
+  fill.style.width = level.pct;
+  fill.style.background = level.color;
+  label.textContent = level.text;
+  label.style.color = level.color;
+}
+
+function checkPasswordMatch() {
+  const pw = document.getElementById('wallet-password').value;
+  const confirm = document.getElementById('wallet-password-confirm').value;
+  const el = document.getElementById('pw-match');
+  if (!confirm) { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  if (pw === confirm) {
+    el.textContent = 'Passwords match';
+    el.style.color = 'var(--success)';
+  } else {
+    el.textContent = 'Passwords do not match';
+    el.style.color = 'var(--error)';
+  }
+}
+
+function togglePasswordVisibility() {
+  const pw = document.getElementById('wallet-password');
+  const confirm = document.getElementById('wallet-password-confirm');
+  const btn = document.getElementById('pw-toggle');
+  const type = pw.type === 'password' ? 'text' : 'password';
+  pw.type = type;
+  confirm.type = type;
+  btn.textContent = type === 'password' ? 'Show' : 'Hide';
+}
+
+// --- Test connection ---
+async function testConnection() {
+  const btn = document.getElementById('test-btn');
+  const result = document.getElementById('test-result');
+  btn.disabled = true;
+  btn.textContent = 'Testing...';
+  result.textContent = '';
+  try {
+    const res = await fetch('/api/test-connection', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        host: document.getElementById('vps-host').value.trim(),
+        user: document.getElementById('vps-user').value.trim(),
+        authMethod,
+        password: document.getElementById('vps-password').value,
+        key: document.getElementById('vps-key').value,
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      result.innerHTML = '<span style="color:var(--success)">Connected</span>';
+    } else {
+      result.innerHTML = '<span style="color:var(--error)">' + data.error + '</span>';
+    }
+  } catch (e) {
+    result.innerHTML = '<span style="color:var(--error)">Request failed</span>';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Test Connection';
+}
+
+// --- Review ---
+function buildReview() {
+  const host = document.getElementById('vps-host').value.trim();
+  const user = document.getElementById('vps-user').value.trim();
+  const orKey = document.getElementById('openrouter-key').value.trim();
+  const tgToken = document.getElementById('telegram-token').value.trim();
+  const pw = document.getElementById('wallet-password').value;
+  const selectedModel = allModels.find(m => m.id === selectedModelId);
+  const modelLabel = selectedModel ? selectedModel.name : selectedModelId;
+  const rows = [
+    ['Server', user + '@' + host],
+    ['Auth', authMethod === 'password' ? 'Password' : 'SSH Key'],
+    ['OpenRouter', orKey.slice(0, 14) + '...'],
+    ['Model', modelLabel],
+    ['Telegram', tgToken.slice(0, 14) + '...'],
+    ['Network', network.charAt(0).toUpperCase() + network.slice(1)],
+    ['Wallet', '\u2022'.repeat(Math.min(pw.length, 16))],
+    ['Autonomy', autonomyLevel.charAt(0).toUpperCase() + autonomyLevel.slice(1)],
+  ];
+  document.getElementById('review-table').innerHTML = rows.map(r =>
+    `<div class="review-row">
+      <span class="review-key">${r[0]}</span>
+      <span class="review-val">${r[1]}</span>
+    </div>`
+  ).join('');
+}
+
+// --- Deploy ---
+const DEPLOY_STEPS = [
+  { key: 'connecting', label: 'Connecting' },
+  { key: 'docker', label: 'Docker' },
+  { key: 'config', label: 'Configuration' },
+  { key: 'building', label: 'Building image' },
+  { key: 'starting', label: 'Starting' },
+  { key: 'verifying', label: 'Verifying' },
+];
+
+async function startDeploy() {
+  document.querySelectorAll('.step').forEach(el => el.classList.add('hidden'));
+  document.getElementById('progress-bar').classList.add('hidden');
+  document.getElementById('footer-nav').classList.add('hidden');
+  const screen = document.getElementById('deploy-screen');
+  screen.classList.remove('hidden');
+  screen.classList.add('step-enter');
+
+  document.getElementById('deploy-steps').innerHTML = DEPLOY_STEPS.map((s, i) =>
+    `<div class="deploy-step-item" id="ds-${s.key}">
+      <div class="deploy-step-num pending" id="dsi-${s.key}">${i + 1}</div>
+      <span class="deploy-step-label" id="dsl-${s.key}">${s.label}</span>
+    </div>`
+  ).join('');
+
+  const logEl = document.getElementById('deploy-log');
+  let currentStepKey = '';
+
+  function updateStep(key) {
+    if (key === currentStepKey) return;
+    if (currentStepKey) {
+      const prev = document.getElementById('dsi-' + currentStepKey);
+      if (prev) { prev.className = 'deploy-step-num done'; prev.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
+      const prevItem = document.getElementById('ds-' + currentStepKey);
+      if (prevItem) prevItem.className = 'deploy-step-item done';
+    }
+    currentStepKey = key;
+    const cur = document.getElementById('dsi-' + key);
+    if (cur) cur.className = 'deploy-step-num running';
+    const curItem = document.getElementById('ds-' + key);
+    if (curItem) curItem.className = 'deploy-step-item active';
+  }
+
+  function addLog(msg) {
+    const line = document.createElement('div');
+    line.style.marginBottom = '2px';
+    line.innerHTML = '<span style="color:var(--gray-800);user-select:none">$ </span>' + msg;
+    logEl.appendChild(line);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  try {
+    const res = await fetch('/api/deploy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        vps: {
+          host: document.getElementById('vps-host').value.trim(),
+          user: document.getElementById('vps-user').value.trim(),
+          authMethod,
+          password: document.getElementById('vps-password').value,
+          key: document.getElementById('vps-key').value,
+        },
+        config: {
+          openrouter_key: document.getElementById('openrouter-key').value.trim(),
+          telegram_token: document.getElementById('telegram-token').value.trim(),
+          network,
+          wallet_password: document.getElementById('wallet-password').value,
+          autonomy_level: autonomyLevel,
+          model: document.getElementById('model-select').value,
+        }
+      })
+    });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6);
+        if (raw === '[DONE]') continue;
+        try {
+          const event = JSON.parse(raw);
+          if (event.step && event.step !== 'error' && event.step !== 'complete') {
+            updateStep(event.step);
+          }
+          if (event.message) addLog(event.message);
+          if (event.step === 'complete') {
+            updateStep('__done__');
+            showSuccess(event);
+          }
+          if (event.step === 'error') {
+            if (currentStepKey) {
+              const cur = document.getElementById('dsi-' + currentStepKey);
+              if (cur) { cur.className = 'deploy-step-num error'; cur.textContent = '!'; }
+            }
+            addLog('<span style="color:var(--error)">ERROR: ' + event.message + '</span>');
+          }
+        } catch {}
+      }
+    }
+  } catch (e) {
+    addLog('<span style="color:var(--error)">Connection error: ' + e.message + '</span>');
+  }
+}
+
+// --- Success ---
+function showSuccess(event) {
+  document.getElementById('deploy-screen').classList.add('hidden');
+  const screen = document.getElementById('success-screen');
+  screen.classList.remove('hidden');
+
+  const host = document.getElementById('vps-host').value.trim();
+  const botUsername = event.botUsername || '';
+  const gatewayUrl = event.gatewayUrl || ('http://' + host + ':18789');
+  const tgUrl = botUsername ? 'https://t.me/' + botUsername : 'https://t.me/';
+  const tgLabel = botUsername ? 'Message @' + botUsername : 'Open Telegram';
+
+  document.getElementById('success-message').textContent = botUsername
+    ? 'Running on ' + host + '. Message @' + botUsername + ' on Telegram to start.'
+    : 'Running on ' + host + '. Message your Telegram bot to start.';
+
+  document.getElementById('success-actions').innerHTML =
+    `<a href="${tgUrl}" target="_blank" class="btn-primary" style="text-decoration:none">${tgLabel}</a>
+     <a href="${gatewayUrl}" target="_blank" class="btn-secondary" style="text-decoration:none">Gateway UI</a>`;
+
+  document.getElementById('mgmt-commands').innerHTML = [
+    ['logs', 'docker compose -f /opt/openclaw-aibtc/docker-compose.yml logs -f'],
+    ['restart', 'docker compose -f /opt/openclaw-aibtc/docker-compose.yml restart'],
+    ['stop', 'docker compose -f /opt/openclaw-aibtc/docker-compose.yml down'],
+  ].map(r => `<div class="mgmt-row"><span class="key">${r[0]}</span><span class="val">${r[1]}</span></div>`).join('');
+}
+
+// --- Init ---
+renderProgress();
+showStep(0);
+</script>
+
+</body>
+</html>

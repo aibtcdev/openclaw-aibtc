@@ -1724,6 +1724,11 @@ $SUDO docker compose build
 printf "${BLUE}Starting agent...${NC}\n"
 $SUDO docker compose up -d
 
+sleep 3
+
+printf "${BLUE}Restarting to finalize config...${NC}\n"
+$SUDO docker compose restart
+
 sleep 5
 
 if $SUDO docker compose ps | grep -q "Up\|running"; then
