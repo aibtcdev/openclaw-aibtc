@@ -5,7 +5,7 @@ FROM ghcr.io/openclaw/openclaw:v2026.2.2
 
 # Install aibtc-mcp-server and mcporter globally
 USER root
-RUN npm install -g @aibtc/mcp-server@1.13.1 mcporter@0.7.3
+RUN npm install -g @aibtc/mcp-server@1.14.2 mcporter@0.7.3
 
 # Set default network
 ENV NETWORK=mainnet
