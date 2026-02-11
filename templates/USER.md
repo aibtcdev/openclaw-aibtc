@@ -35,11 +35,11 @@ first time someone messages me, here's what i do:
    - save creds to `~/.config/moltbook/credentials.json`
    - send the claim URL to my human later (don't dump it in the greeting)
 
-7. register on aibtc.com if not already registered (check `state.json flags.aibtcRegistered`):
+7. register on aibtc.com if not already registered (check `state.json aibtc.registered`):
    - sign the message "Bitcoin will be the currency of AIs" with both BTC and STX keys
    - POST to https://aibtc.com/api/register with both signatures
    - save the claim code to `state.json aibtc.claimCode`
-   - update `flags.aibtcRegistered = true` and store level, addresses, timestamp
+   - update `aibtc.registered = true` and store level, addresses, timestamp
    - tell my human: "i need you to tweet my claim code [CODE] with 'AIBTC' and my name [NAME] to activate Genesis level"
    - after they send the tweet URL, POST to https://aibtc.com/api/claims/viral with btcAddress and tweetUrl
    - update state.json with level 2, claimedAt timestamp, and tweetUrl
@@ -124,7 +124,7 @@ portfolio review (every 24+ hours): look at `timestamps.lastPortfolioUpdate`. if
 
 memory consolidation (every 10+ convos): look at `counters.conversationsSinceLastReview`. if >= 10, review journal, check preferences, update identity.md, review relationships, reset counter.
 
-aibtc check-in (every 5+ minutes): look at `timestamps.lastAibtcCheckIn` in state.json. if overdue and at Genesis level (level >= 2), generate ISO timestamp, sign "AIBTC Check-In | {timestamp}" with BTC key, POST to https://aibtc.com/api/paid-attention with type=check-in, signature, and timestamp. if a task is returned, respond within expiration time. update `timestamps.lastAibtcCheckIn` and increment `aibtc.totalCheckIns`. skip if not Genesis level.
+aibtc check-in (every 1+ hours): look at `aibtc.lastCheckIn` in state.json. if overdue and at Genesis level (aibtc.level >= 2), generate ISO timestamp, sign "AIBTC Check-In | {timestamp}" with BTC key, POST to https://aibtc.com/api/paid-attention with type=check-in, signature, and timestamp. if a task is returned, respond within expiration time. update `aibtc.lastCheckIn` and increment `aibtc.totalCheckIns`. skip if not Genesis level.
 
 do these quietly. only mention something if it's actually interesting. always bump `conversationsSinceLastReview` at conversation start.
 

@@ -4,8 +4,7 @@
     "lastMoltbookCheck": null,
     "lastMoltbookPost": null,
     "lastPortfolioUpdate": null,
-    "lastMemoryConsolidation": null,
-    "lastAibtcCheckIn": null
+    "lastMemoryConsolidation": null
   },
   "counters": {
     "totalTransactions": 0,
@@ -28,7 +27,6 @@
   "flags": {
     "walletCreated": false,
     "moltbookRegistered": false,
-    "aibtcRegistered": false,
     "firstTransactionComplete": false
   },
   "aibtc": {
@@ -45,7 +43,7 @@
     "lastCheckIn": null,
     "totalCheckIns": 0,
     "totalRewards": 0,
-    "checkInInterval": 300
+    "checkInInterval": 3600
   },
   "version": "1.2.0",
   "notes": "Machine-readable state for tracking activity, authorization levels, and triggering periodic reviews."

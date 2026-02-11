@@ -1,13 +1,34 @@
 # Phases
 
-## Phase 1: Remove setup.sh from test suite
-Goal: Remove all `setup.sh` references from `tests/test-setup-sync.sh`. Delete setup.sh-only test sections (Dockerfile, docker-compose, state.json). Update loops to only iterate over `local-setup.sh` and `vps-setup.sh`. Restructure autonomy preset comparison to compare local vs vps only.
+## Phase 1: Update MCP server pin
+Goal: Bump @aibtc/mcp-server from 1.13.1 to 1.14.2 in Dockerfile (issue #9)
 Status: `completed`
 
-## Phase 2: Delete setup.sh and update CI
-Goal: Delete `setup.sh`. Remove it from `.github/workflows/ci.yml` shellcheck command and `CONTRIBUTING.md` shellcheck command.
+Key files:
+- `Dockerfile` (line 8)
+
+Verification: Docker build succeeds
+
+## Phase 2: Add agent lifecycle skill
+Goal: Create skills/aibtc-lifecycle/SKILL.md teaching agents the full aibtc.com registration, X claiming, check-in, and paid-attention workflow with exact API contracts and MCP tool names (issue #8)
 Status: `completed`
 
-## Phase 3: Update README install instructions
-Goal: Replace all 4 `./setup.sh` references in `README.md` with `./local-setup.sh` (local/Docker Desktop) or `./vps-setup.sh` (VPS/cloud) depending on context.
-Status: `completed`
+Key files:
+- `skills/aibtc-lifecycle/SKILL.md` (create)
+
+Pattern references:
+- `skills/aibtc/SKILL.md` (YAML frontmatter style)
+- `skills/moltbook/SKILL.md` (API-based skill pattern)
+
+## Phase 3: Wire lifecycle into agent boot sequence
+Goal: Update templates to add aibtc.com lifecycle after wallet creation, add state tracking, sync heredoc copies in setup scripts
+Status: `planned`
+
+Key files:
+- `templates/USER.md` (add lifecycle steps)
+- `templates/memory/state.json` (add aibtc tracking fields)
+- `local-setup.sh` (sync heredoc)
+- `vps-setup.sh` (sync heredoc)
+- `update-skill.sh` (sync heredoc)
+
+Verification: `bash tests/test-setup-sync.sh` passes
