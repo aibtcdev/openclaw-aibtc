@@ -1530,10 +1530,44 @@ chown 1000:1000 "$STATE_FILE" 2>/dev/null || true
 printf "${GREEN}✓ aibtc skill updated (autonomous tier model)!${NC}\n"
 printf "${GREEN}✓ moltbook skill installed!${NC}\n"
 printf "${GREEN}✓ mcporter config updated with keep-alive!${NC}\n"
-printf "${BLUE}Restarting container...${NC}\n"
 
 cd "$INSTALL_DIR"
-docker compose restart
+
+# Update Dockerfile: add sudo with scoped privileges for the node user
+DOCKERFILE="$INSTALL_DIR/Dockerfile"
+NEEDS_REBUILD=false
+
+if [ -f "$DOCKERFILE" ]; then
+    if ! grep -q 'sudoers.d/node-agent' "$DOCKERFILE" 2>/dev/null; then
+        printf "${BLUE}Updating Dockerfile: adding scoped sudo for package installs...${NC}\n"
+        cat > "$DOCKERFILE" << 'EOF'
+FROM ghcr.io/openclaw/openclaw:latest
+USER root
+RUN npm install -g @aibtc/mcp-server mcporter
+RUN apt-get update && apt-get install -y --no-install-recommends sudo \
+    && rm -rf /var/lib/apt/lists/* \
+    && echo "node ALL=(root) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt, /usr/local/bin/npm, /usr/bin/npx" > /etc/sudoers.d/node-agent \
+    && chmod 0440 /etc/sudoers.d/node-agent
+ENV NETWORK=mainnet
+USER node
+CMD ["node", "dist/index.js", "gateway", "--bind", "lan", "--port", "18789"]
+EOF
+        NEEDS_REBUILD=true
+        printf "${GREEN}✓ Dockerfile updated with scoped sudo${NC}\n"
+    else
+        printf "${BLUE}Dockerfile already has scoped sudo, skipping.${NC}\n"
+    fi
+fi
+
+if [ "$NEEDS_REBUILD" = true ]; then
+    printf "${BLUE}Rebuilding Docker image (this may take 1-2 minutes)...${NC}\n"
+    docker compose build --no-cache
+    printf "${BLUE}Restarting container with new image...${NC}\n"
+    docker compose up -d
+else
+    printf "${BLUE}Restarting container...${NC}\n"
+    docker compose restart
+fi
 
 printf "${GREEN}✓ Done! Your agent now has:${NC}\n"
 printf "  - Autonomous operation with 4-tier security model\n"
@@ -1541,4 +1575,5 @@ printf "  - Session-based wallet unlock (no per-transaction passwords)\n"
 printf "  - Spending limits and daily caps in state.json\n"
 printf "  - Daemon mode for wallet persistence\n"
 printf "  - Moltbook social network integration\n"
+printf "  - Scoped sudo: can install packages (npm/apt) without full root\n"
 printf "${BLUE}Note: The daemon will auto-start on first mcporter call.${NC}\n"
