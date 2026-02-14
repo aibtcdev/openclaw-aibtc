@@ -8,7 +8,8 @@ USER root
 RUN npm install -g @aibtc/mcp-server@1.14.2 mcporter@0.7.3
 
 # Install sudo, git, and GitHub CLI; grant node user scoped privileges
-# hadolint ignore=DL3008
+# hadolint ignore=DL3008,DL4006
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN apt-get update \
     && apt-get install -y --no-install-recommends sudo git curl gpg \
     && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
